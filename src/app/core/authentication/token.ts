@@ -1,11 +1,15 @@
 import { base64, capitalize, currentTimestamp, timeLeft } from './helpers';
-import { Token } from './interface';
+import { Token, User } from './interface';
 
 export abstract class BaseToken {
   constructor(protected attributes: Token) {}
 
   get access_token(): string {
     return this.attributes.access_token;
+  }
+
+  get user(): User {
+    return this.attributes.info;
   }
 
   get refresh_token(): string | void {

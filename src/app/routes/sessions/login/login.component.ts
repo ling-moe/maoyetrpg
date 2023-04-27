@@ -13,9 +13,8 @@ export class LoginComponent {
   isSubmitting = false;
 
   loginForm = this.fb.nonNullable.group({
-    username: ['ng-matero', [Validators.required]],
-    password: ['ng-matero', [Validators.required]],
-    rememberMe: [false],
+    username: ['', [Validators.required]],
+    password: ['', [Validators.required]],
   });
 
   constructor(private fb: FormBuilder, private router: Router, private auth: AuthService) {}
@@ -28,15 +27,11 @@ export class LoginComponent {
     return this.loginForm.get('password')!;
   }
 
-  get rememberMe() {
-    return this.loginForm.get('rememberMe')!;
-  }
-
   login() {
     this.isSubmitting = true;
 
     this.auth
-      .login(this.username.value, this.password.value, this.rememberMe.value)
+      .login(this.username.value, this.password.value)
       .pipe(filter(authenticated => authenticated))
       .subscribe(
         () => this.router.navigateByUrl('/'),

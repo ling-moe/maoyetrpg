@@ -10,13 +10,13 @@ import { map } from 'rxjs/operators';
 export class FakeLoginService extends LoginService {
   private token = { access_token: 'MW56YjMyOUAxNjMuY29tWm9uZ2Jpbg==', token_type: 'bearer' };
 
-  login() {
-    return of(this.token);
-  }
+  // login() {
+  //   return of(this.token);
+  // }
 
-  refresh() {
-    return of(this.token);
-  }
+  // refresh() {
+  //   return of(this.token);
+  // }
 
   logout() {
     return of({});

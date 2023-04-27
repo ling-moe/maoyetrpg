@@ -6,9 +6,8 @@ import { AuthService, User } from '@core/authentication';
   selector: 'app-user-panel',
   template: `
     <div class="matero-user-panel" fxLayout="column" fxLayoutAlign="center center">
-      <img class="matero-user-panel-avatar" [src]="user.avatar" alt="avatar" width="64" />
+      <img class="matero-user-panel-avatar" [src]="avatar" alt="avatar" width="64" />
       <h4 class="matero-user-panel-name">{{ user.name }}</h4>
-      <h5 class="matero-user-panel-email">{{ user.email }}</h5>
       <div class="matero-user-panel-icons">
         <button mat-icon-button routerLink="/profile/overview">
           <mat-icon class="icon-18">account_circle</mat-icon>
@@ -28,6 +27,10 @@ export class UserPanelComponent implements OnInit {
   user!: User;
 
   constructor(private router: Router, private auth: AuthService) {}
+
+  get avatar(): string{
+    return `https://maoyetrpg-1254195378.cos.ap-guangzhou.myqcloud.com/resource/${this.user.touxiang}`;
+  }
 
   ngOnInit(): void {
     this.auth.user().subscribe(user => (this.user = user));

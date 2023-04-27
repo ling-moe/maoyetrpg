@@ -12,8 +12,7 @@ import { User } from './interface';
 export class AuthService {
   private user$ = new BehaviorSubject<User>({});
   private change$ = merge(
-    this.tokenService.change(),
-    this.tokenService.refresh().pipe(switchMap(() => this.refresh()))
+    this.tokenService.change()
   ).pipe(
     switchMap(() => this.assignUser()),
     share()
@@ -33,9 +32,9 @@ export class AuthService {
     return this.tokenService.valid();
   }
 
-  login(username: string, password: string, rememberMe = false) {
-    return this.loginService.login(username, password, rememberMe).pipe(
-      tap(token => this.tokenService.set(token)),
+  login(username: string, password: string) {
+    return this.loginService.login(username, password).pipe(
+      tap(result => this.tokenService.set(result.data)),
       map(() => this.check())
     );
   }
@@ -74,6 +73,6 @@ export class AuthService {
       return of(this.user$.getValue());
     }
 
-    return this.loginService.me().pipe(tap(user => this.user$.next(user)));
+    return this.tokenService.user().pipe(tap(user => this.user$.next(user)));
   }
 }

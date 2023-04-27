@@ -1,11 +1,13 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Observable, Subject, Subscription, timer } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, Subscription, timer, of } from 'rxjs';
 import { share } from 'rxjs/operators';
 import { LocalStorageService } from '@shared';
-import { Token } from './interface';
+import { Token, User } from './interface';
 import { BaseToken } from './token';
 import { TokenFactory } from './token-factory.service';
 import { currentTimestamp, filterObject } from './helpers';
+import { now } from 'moment';
+import * as dayjs from 'dayjs';
 
 @Injectable({
   providedIn: 'root',
@@ -31,6 +33,10 @@ export class TokenService implements OnDestroy {
 
   change(): Observable<BaseToken | undefined> {
     return this.change$.pipe(share());
+  }
+
+  user(): Observable<User> {
+    return of(this.token!.user);
   }
 
   refresh(): Observable<BaseToken | undefined> {
@@ -71,9 +77,10 @@ export class TokenService implements OnDestroy {
     if (!token) {
       this.store.remove(this.key);
     } else {
-      const value = Object.assign({ access_token: '', token_type: 'Bearer' }, token, {
-        exp: token.expires_in ? currentTimestamp() + token.expires_in : null,
+      const value = Object.assign({ access_token: token.token, token_type: 'Bearer' }, token, {
+        exp: dayjs().add(1, 'day'),
       });
+      debugger;
       this.store.set(this.key, filterObject(value));
     }
 
