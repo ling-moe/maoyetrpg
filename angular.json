@@ -28,7 +28,10 @@
               "src/assets"
             ],
             "styles": [
-              "src/styles.scss"
+              "src/styles.scss",
+              "@uppy/core/dist/style.min.css",
+              "@uppy/dashboard/dist/style.min.css",
+              "@uppy/image-editor/dist/style.min.css"
             ],
             "scripts": []
           },

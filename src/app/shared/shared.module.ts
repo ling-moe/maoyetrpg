@@ -21,6 +21,7 @@ import { ErrorCodeComponent } from './components/error-code/error-code.component
 import { DisableControlDirective } from './directives/disable-control.directive';
 import { SafeUrlPipe } from './pipes/safe-url.pipe';
 import { ToObservablePipe } from './pipes/to-observable.pipe';
+import { FileUploadComponent } from './components/file-upload/file-upload.component';
 
 const MODULES: any[] = [
   CommonModule,
@@ -39,7 +40,12 @@ const MODULES: any[] = [
   ToastrModule,
   TranslateModule,
 ];
-const COMPONENTS: any[] = [BreadcrumbComponent, PageHeaderComponent, ErrorCodeComponent];
+const COMPONENTS: any[] = [
+  BreadcrumbComponent,
+  PageHeaderComponent,
+  ErrorCodeComponent,
+  FileUploadComponent
+];
 const COMPONENTS_DYNAMIC: any[] = [];
 const DIRECTIVES: any[] = [DisableControlDirective];
 const PIPES: any[] = [SafeUrlPipe, ToObservablePipe];
@@ -47,6 +53,6 @@ const PIPES: any[] = [SafeUrlPipe, ToObservablePipe];
 @NgModule({
   imports: [...MODULES],
   exports: [...MODULES, ...COMPONENTS, ...DIRECTIVES, ...PIPES],
-  declarations: [...COMPONENTS, ...COMPONENTS_DYNAMIC, ...DIRECTIVES, ...PIPES],
+  declarations: [...COMPONENTS, ...COMPONENTS_DYNAMIC, ...DIRECTIVES, ...PIPES, FileUploadComponent],
 })
 export class SharedModule {}

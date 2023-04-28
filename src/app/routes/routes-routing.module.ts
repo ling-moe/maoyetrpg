@@ -19,11 +19,12 @@ const routes: Routes = [
     canActivate: [AuthGuard],
     canActivateChild: [AuthGuard],
     children: [
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: '', redirectTo: 'CardTool', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent },
       { path: '403', component: Error403Component },
       { path: '404', component: Error404Component },
       { path: '500', component: Error500Component },
+      { path: 'CardTool', loadChildren: () => import('./card-tool/card-tool.module').then(m => m.CardToolModule) },
     ],
   },
   {
@@ -34,7 +35,7 @@ const routes: Routes = [
       { path: 'register', component: RegisterComponent },
     ],
   },
-  { path: '**', redirectTo: 'dashboard' },
+  { path: '**', redirectTo: 'CardTool' },
 ];
 
 @NgModule({

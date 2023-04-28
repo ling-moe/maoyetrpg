@@ -1,0 +1,16 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-grid-list cols="4" rowHeight="150px">
+    <mat-grid-tile [colspan]="2" [rowspan]="4">
+      <file-upload (avatarUrl)="modifyAvatar($event)"></file-upload>
+    </mat-grid-tile>
+    <mat-grid-tile [colspan]="2" [rowspan]="4">
+      <formly-form [model]="model" [fields]="fields" [form]="form">
+        <formly-field [field]="baseInfo"></formly-field>
+      </formly-form>
+    </mat-grid-tile>
+  </mat-grid-list>
+
+
+  <button mat-raised-button color="primary" [disabled]="!form.valid">Submit</button>
+
+</form>
