@@ -1,16 +1,152 @@
 <form [formGroup]="form" (ngSubmit)="submit()">
-  <mat-grid-list cols="4" rowHeight="150px">
+<h3>人物信息</h3>
+<mat-divider></mat-divider>
+  <mat-grid-list cols="6" rowHeight="100px">
     <mat-grid-tile [colspan]="2" [rowspan]="4">
-      <file-upload (avatarUrl)="modifyAvatar($event)"></file-upload>
+        <file-upload (avatorUrl)="modifyAvatar($event)"></file-upload>
     </mat-grid-tile>
-    <mat-grid-tile [colspan]="2" [rowspan]="4">
-      <formly-form [model]="model" [fields]="fields" [form]="form">
-        <formly-field [field]="baseInfo"></formly-field>
+    <mat-grid-tile [colspan]="2" [rowspan]="3">
+      <formly-form [model]="model" [fields]="baseInfo" [form]="form">
       </formly-form>
+    </mat-grid-tile>
+    <mat-grid-tile [colspan]="2" [rowspan]="3">
+      <formly-form [model]="model" [fields]="addressInfo" [form]="form">
+      </formly-form>
+    </mat-grid-tile>
+    <mat-grid-tile [colspan]="4" [rowspan]="1">
+      <span style="width: 100%;">职业说明：</span>
+      <span> {{getJobDesc(model.job)}}</span>
+      <!-- 作为tip展示
+      <span>信用评级范围：</span>
+      <span>本职技能点：</span>
+      <span>兴趣技能点：</span> -->
     </mat-grid-tile>
   </mat-grid-list>
 
+  <h3>属性信息</h3>
+  <mat-divider></mat-divider>
+  <mat-grid-list cols="6" rowHeight="100px">
+    <mat-grid-tile [colspan]="2" [rowspan]="2">
+      <formly-form [model]="model" [fields]="personBaseProps" [form]="form">
+      </formly-form>
+    </mat-grid-tile>
+    <mat-grid-tile [colspan]="2" [rowspan]="2">
+      <formly-form [model]="model" [fields]="personAdvanceProps" [form]="form">
+      </formly-form>
+    </mat-grid-tile>
+    <mat-grid-tile [colspan]="2" [rowspan]="2">
+      <div style="width:200px; height: 200px;" #personChart></div>
+    </mat-grid-tile>
+  </mat-grid-list>
 
+  <h3>技能信息</h3>
+  <mat-divider></mat-divider>
+  <mat-grid-list cols="6" rowHeight="100px">
+    <mat-grid-tile [colspan]="1" [rowspan]="2">
+      <div style="width: 100%;">
+        <div style="display: flex;">
+          <span style="margin: auto 0;">本职技能点：</span>
+          <mtx-progress [value]="40" style="width: 60%;">100/200</mtx-progress>
+        </div>
+        <div style="display: flex;">
+          <span style="margin: auto 0;">兴趣技能点：</span>
+          <mtx-progress [value]="60" style="width: 60%;">100/200</mtx-progress>
+        </div>
+      </div>
+    </mat-grid-tile>
+    <mat-grid-tile [colspan]="3" [rowspan]="6">
+      <mat-tab-group animationDuration="0ms">
+        <mat-tab *ngFor="let tab of skill" [label]="tab.type" >
+          <mat-table [dataSource]="tab.skill" class="fixed-table mat-elevation-z8" >
+            <ng-container matColumnDef="name">
+              <mat-header-cell *matHeaderCellDef> 技能名称 </mat-header-cell>
+              <mat-cell *matCellDef="let element"> {{element.name}} </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="ini">
+              <mat-header-cell *matHeaderCellDef> 初始 </mat-header-cell>
+              <mat-cell *matCellDef="let element"> {{element.ini}} </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="grow">
+              <mat-header-cell *matHeaderCellDef> 成长 </mat-header-cell>
+              <mat-cell *matCellDef="let element"> {{element.grow}} </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="pro">
+              <mat-header-cell *matHeaderCellDef> 职业 </mat-header-cell>
+              <mat-cell *matCellDef="let element"> {{element.pro}} </mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="interest">
+              <mat-header-cell *matHeaderCellDef> 兴趣 </mat-header-cell>
+              <mat-cell *matCellDef="let element"> {{element.interest}} </mat-cell>
+            </ng-container>
+            <!-- <ng-container matColumnDef="symbol">
+              <th mat-header-cell *matHeaderCellDef> 成功率 </th>
+              <td mat-cell *matCellDef="let element"> {{element.symbol}} </td>
+            </ng-container> -->
+
+            <mat-header-row *matHeaderRowDef="skillColumn"></mat-header-row>
+            <mat-row *matRowDef="let row; columns: skillColumn;"></mat-row>
+          </mat-table>
+
+        </mat-tab>
+      </mat-tab-group>
+    </mat-grid-tile>
+    <mat-grid-tile [colspan]="2" [rowspan]="2">
+
+    </mat-grid-tile>
+  </mat-grid-list>
+  <h3>武器</h3>
+  <mat-divider></mat-divider>
+  <formly-form [model]="model" [fields]="weaponsProps" [form]="form">
+  </formly-form>
+  <mat-table [dataSource]="weapons" class="fixed-table mat-elevation-z8" >
+    <ng-container matColumnDef="name">
+      <mat-header-cell *matHeaderCellDef> 武器名称 </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.name}} </mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="skill">
+      <mat-header-cell *matHeaderCellDef> 使用技能 </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.skill}} </mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="dam">
+      <mat-header-cell *matHeaderCellDef> 伤害 </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.dam}} </mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="tho">
+      <mat-header-cell *matHeaderCellDef> 贯穿 </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.tho}} </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="range">
+      <mat-header-cell *matHeaderCellDef> 射程 </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.range}} </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="round">
+      <mat-header-cell *matHeaderCellDef> 装弹数 </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.round}} </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="price">
+      <mat-header-cell *matHeaderCellDef> 价格($) </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.price}} </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="err">
+      <mat-header-cell *matHeaderCellDef> 故障值 </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.err}} </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="time">
+      <mat-header-cell *matHeaderCellDef> 时代 </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.time}} </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="weaponsColumn"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: weaponsColumn;"></mat-row>
+  </mat-table>
+  <h3>携带物品</h3>
+  <mat-divider></mat-divider>
   <button mat-raised-button color="primary" [disabled]="!form.valid">Submit</button>
 
 </form>

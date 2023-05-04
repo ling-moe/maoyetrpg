@@ -1,0 +1,22 @@
+.fixed-table{
+  overflow-y: scroll;
+  height: 600px;
+}
+.mat-column-name {
+  height: 40px;
+}
+.mat-mdc-table {
+  max-height: 200px;
+  overflow: auto;
+}
+
+:host {
+  ::ng-deep {
+    .mat-grid-tile-content {
+      display: block;
+    }
+    .mat-tab-label{
+      min-width: 60px;
+    }
+  }
+}
