@@ -1,6 +1,6 @@
-import Uppy, { BasePlugin, DefaultPluginOptions, SuccessResponse, UppyFile } from "@uppy/core";
-import * as COS from "cos-js-sdk-v5";
-import { MD5, enc } from "crypto-js";
+import Uppy, { BasePlugin, DefaultPluginOptions, SuccessResponse, UppyFile } from '@uppy/core';
+import * as COS from 'cos-js-sdk-v5';
+import { MD5, enc } from 'crypto-js';
 
 export default class Cos extends BasePlugin {
     bucket: string;
@@ -11,42 +11,34 @@ export default class Cos extends BasePlugin {
     opts: DefaultPluginOptions = {};
     tencentCos?: COS;
     constructor(uppy: Uppy, opts?: DefaultPluginOptions) {
-        super(uppy, opts)
-        this.id = opts?.id || 'UppyCos'
-        this.type = 'example'
-        this.uploader = this.uploader.bind(this)
-        this.bucket = opts?.bucket || 'test'
-        this.region = opts?.region || 'test'
-        this.stsUrl = opts?.stsUrl || 'test'
-        this.protocol = location.protocol === 'https:' ? 'https:' : 'http:'
-        this.prefix = this.protocol + '//' + this.bucket + '.cos.' + this.region + '.myqcloud.com/'
-        uppy.on('file-added', (file) => {
-            console.log('Added file', file)
-        })
-        uppy.on('upload-progress', (file, progress) => {
-            // file: { id, name, type, ... }
-            // progress: { uploader, bytesUploaded, bytesTotal }
-            console.log(file?.id, progress.bytesUploaded, progress.bytesTotal)
-        })
+        super(uppy, opts);
+        this.id = opts?.id || 'UppyCos';
+        this.type = 'example';
+        this.uploader = this.uploader.bind(this);
+        this.bucket = opts?.bucket || 'test';
+        this.region = opts?.region || 'test';
+        this.stsUrl = opts?.stsUrl || 'test';
+        this.protocol = location.protocol === 'https:' ? 'https:' : 'http:';
+        this.prefix = this.protocol + '//' + this.bucket + '.cos.' + this.region + '.myqcloud.com/';
     }
 
     getOptions(file: any) {
-        const overrides = this.uppy.getState().xhrUpload
+        const overrides = this.uppy.getState().xhrUpload;
         const opts = {
             ...this.opts,
             ...(overrides || {}),
             ...(file.xhrUpload || {}),
             headers: {}
-        }
-        Object.assign(opts.headers, this.opts.headers)
+        };
+        Object.assign(opts.headers, this.opts.headers);
         if (overrides) {
-            Object.assign(opts.headers, overrides.headers)
+            Object.assign(opts.headers, overrides.headers);
         }
         if (file.xhrUpload) {
-            Object.assign(opts.headers, file.xhrUpload.headers)
+            Object.assign(opts.headers, file.xhrUpload.headers);
         }
 
-        return opts
+        return opts;
     }
 
     camSafeUrlEncode(str: string) {
@@ -60,37 +52,37 @@ export default class Cos extends BasePlugin {
 
     uploader(fileIDs: string[]): Promise<void> {
         if (fileIDs.length === 0) {
-            this.uppy.log('[XHRUpload] No files to upload!')
-            return Promise.resolve()
+            this.uppy.log('[XHRUpload] No files to upload!');
+            return Promise.resolve();
         }
-        this.uppy.log('[XHRUpload] Uploading...')
+        this.uppy.log('[XHRUpload] Uploading...');
 
-        const files = fileIDs.map((fileID) => this.uppy.getFile(fileID))
+        const files = fileIDs.map((fileID) => this.uppy.getFile(fileID));
 
-        let uploadPromise = this.uploadFiles(files)
+        const uploadPromise = this.uploadFiles(files);
         // fileIDs.map((fileID) => this.uppy.removeFile(fileID))
-        return uploadPromise
+        return uploadPromise;
     }
 
     uploadFiles(files: any[]): Promise<void> {
         const actions = files.map((file, i) => {
-            const current = i + 1
-            const total = file.length
+            const current = i + 1;
+            const total = file.length;
 
             if (file.error) {
-                return Promise.reject(new Error(file.error))
+                return Promise.reject(new Error(file.error));
             } else if (file.isRemote) {
-                return Promise.reject(new Error("暂时只支持本地文件上传"))
+                return Promise.reject(new Error('暂时只支持本地文件上传'));
             } else {
-                return this.authorizationAndUpdate(file, current, total)
+                return this.authorizationAndUpdate(file, current, total);
             }
-        })
+        });
         return Promise.resolve();
     }
 
     getTokenUrl(): Promise<COS> {
-      const { stsUrl, tencentCos } = this
-      if(!!tencentCos){
+      const { stsUrl, tencentCos } = this;
+      if(tencentCos){
         return Promise.resolve(tencentCos);
       }
       this.tencentCos = new COS({
@@ -102,7 +94,7 @@ export default class Cos extends BasePlugin {
             const data = JSON.parse((e.target as any).responseText).data.credentials_data;
             const credentials = data.Credentials;
             if (!data || !credentials){
-              throw new Error('credentials invalid')
+              throw new Error('credentials invalid');
             }
             callback({
                 TmpSecretId: credentials.TmpSecretId,
@@ -119,45 +111,44 @@ export default class Cos extends BasePlugin {
     }
 
     createProgressTimeout(timeout: number, timeoutHandler: (e: Error)=>void) {
-        const uppy = this.uppy
-        const self = this
-        let isDone = false
+        const uppy = this.uppy;
+        let isDone = false;
 
         function onTimedOut() {
-            uppy.log(`[XHRUpload] timed out`)
-            const error = new Error(`timeout!`)
-            timeoutHandler(error)
+            uppy.log(`[XHRUpload] timed out`);
+            const error = new Error(`timeout!`);
+            timeoutHandler(error);
         }
 
-        let aliveTimer: string | number | NodeJS.Timeout | null | undefined = null
+        let aliveTimer: string | number | NodeJS.Timeout | null | undefined = null;
         function progress() {
             // Some browsers fire another progress event when the upload is
             // cancelled, so we have to ignore progress after the timer was
             // told to stop.
-            if (isDone) return
+            if (isDone) return;
 
             if (timeout > 0) {
-                if (aliveTimer) clearTimeout(aliveTimer)
-                aliveTimer = setTimeout(onTimedOut, timeout)
+                if (aliveTimer) clearTimeout(aliveTimer);
+                aliveTimer = setTimeout(onTimedOut, timeout);
             }
         }
 
         function done() {
-            uppy.log(`[XHRUpload] timer done`)
+            uppy.log(`[XHRUpload] timer done`);
             if (aliveTimer) {
-                clearTimeout(aliveTimer)
-                aliveTimer = null
+                clearTimeout(aliveTimer);
+                aliveTimer = null;
             }
-            isDone = true
+            isDone = true;
         }
 
         return {
             progress,
             done
-        }
+        };
     }
     validateStatus(status: number) {
-        return status >= 200 && status < 300
+        return status >= 200 && status < 300;
     }
 
     getResponseData(responseText: any, response: any) {
@@ -166,35 +157,35 @@ export default class Cos extends BasePlugin {
 
     putFile(file: any, tokenUrl: string, key: string) {
         const timer = this.createProgressTimeout(300000, (error) => {
-            xhr.abort()
-            this.uppy.emit('upload-error', file, error)
+            xhr.abort();
+            this.uppy.emit('upload-error', file, error);
             // reject(error)
-        })
+        });
 
-        let xhr = new XMLHttpRequest();
+        const xhr = new XMLHttpRequest();
 
 
 
-        let url = tokenUrl;
+        const url = tokenUrl;
         return new Promise((resolve, reject) => {
             xhr.upload.addEventListener('loadstart', (ev) => {
-                this.uppy.log(`[XHRUpload] ${file.name} started`)
-            })
+                this.uppy.log(`[XHRUpload] ${file.name} started`);
+            });
 
             xhr.upload.addEventListener('progress', (ev) => {
-                this.uppy.log(`[XHRUpload] ${file.name} progress: ${ev.loaded} / ${ev.total}`)
+                this.uppy.log(`[XHRUpload] ${file.name} progress: ${ev.loaded} / ${ev.total}`);
                 // Begin checking for timeouts when progress starts, instead of loading,
                 // to avoid timing out requests on browser concurrency queue
-                timer.progress()
+                timer.progress();
 
                 if (ev.lengthComputable) {
                     this.uppy.emit('upload-progress', file, {
                         uploader: this,
                         bytesUploaded: ev.loaded,
                         bytesTotal: ev.total
-                    })
+                    });
                 }
-            })
+            });
             // TODO need fix success onload to this!
             // xhr.addEventListener('load', (ev) => {
             //     this.uppy.log(`[XHRUpload] ${file.name} finished`)
@@ -224,52 +215,52 @@ export default class Cos extends BasePlugin {
             //     }
             // })
             xhr.addEventListener('error', (ev) => {
-                this.uppy.log(`[XHRUpload] ${file.name} errored`)
-                timer.done()
+                this.uppy.log(`[XHRUpload] ${file.name} errored`);
+                timer.done();
 
-                const error = xhr.responseText
-                this.uppy.emit('upload-error', file, error)
-                return reject(error)
-            })
+                const error = xhr.responseText;
+                this.uppy.emit('upload-error', file, error);
+                return reject(error);
+            });
 
 
             this.uppy.on('cancel-all', () => {
-                timer.done()
-                xhr.abort()
-                reject(new Error('Upload cancelled'))
-            })
-            xhr.open('PUT', `${url}/resource`, true)
+                timer.done();
+                xhr.abort();
+                reject(new Error('Upload cancelled'));
+            });
+            xhr.open('PUT', `${url}/resource`, true);
             xhr.onreadystatechange = (event) => {
                 if (xhr.readyState === 4) {
                     if (xhr.status === 200) {
-                        const body = this.getResponseData(xhr.responseText, xhr)
+                        const body = this.getResponseData(xhr.responseText, xhr);
                         const fakeUploadResp = {
-                            uploadURL: "test",
-                            key: key
-                        }
-                        this.uppy.emit('upload-success', file, fakeUploadResp)
-                        timer.done()
-                        resolve(null)
+                            uploadURL: 'test',
+                            key
+                        };
+                        this.uppy.emit('upload-success', file, fakeUploadResp);
+                        timer.done();
+                        resolve(null);
                     } else {
-                        reject(new Error('test'))
+                        reject(new Error('test'));
                     }
                 }
-            }
-            xhr.send(file.data)
-        })
+            };
+            xhr.send(file.data);
+        });
     }
 
     async authorizationAndUpdate(file: UppyFile, current: any, total: any): Promise<void> {
       const { uppy } = this;
       const fileMd5 = await new Promise((resolve) => {
-        const fileReader = new FileReader()
+        const fileReader = new FileReader();
         fileReader.onloadend = (ev) => {
           resolve(
             MD5(enc.Latin1.parse((ev.target!.result) as string)).toString()
-          )
-        }
-        fileReader.readAsBinaryString(file.data)
-      })
+          );
+        };
+        fileReader.readAsBinaryString(file.data);
+      });
         return new Promise((resolve, reject) => {
           this.getTokenUrl().then((client) => client.uploadFile({
             Bucket: this.bucket, /* 填写自己的 bucket，必须字段 */
@@ -279,22 +270,22 @@ export default class Cos extends BasePlugin {
             SliceSize: 1024 * 1024 * 5,     /* 触发分块上传的阈值，超过5MB使用分块上传，小于5MB使用简单上传。可自行设置，非必须 */
         }, function(err, data) {
             if (err) {
-              uppy.emit('upload-error', file, err)
-              reject(err)
+              uppy.emit('upload-error', file, err);
+              reject(err);
             } else {
-              uppy.emit('upload-success', file, {uploadURL: data.Location, status: data.statusCode } as SuccessResponse)
-              resolve()
+              uppy.emit('upload-success', file, {uploadURL: data.Location, status: data.statusCode } as SuccessResponse);
+              resolve();
             }
         }));
-        })
+        });
     }
 
     install() {
-        this.uppy.addUploader(this.uploader)
+        this.uppy.addUploader(this.uploader);
     }
 
     uninstall() {
-        this.uppy.removeUploader(this.uploader)
+        this.uppy.removeUploader(this.uploader);
     }
 }
 const i18n = {
@@ -364,7 +355,7 @@ const i18n = {
         complete: '完成'
         // ...etc
     }
-}
+};
 //    cos.uploadFile({
 //     Bucket: 'examplebucket-1250000000', /* 填写自己的 bucket，必须字段 */
 //     Region: 'COS_REGION',     /* 存储桶所在地域，必须字段 */

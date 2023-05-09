@@ -1,1 +1,9 @@
+img[src=""], img:not([src]){
+  opacity: 0;
+}
 
+:host{
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+}

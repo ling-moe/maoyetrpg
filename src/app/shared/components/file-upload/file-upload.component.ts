@@ -26,7 +26,7 @@ export class FileUploadComponent implements OnInit {
 
    ngOnInit() {
     this.uppy = new Uppy({restrictions: { maxNumberOfFiles: 1 }})
-    .use(Dashboard)
+    .use(Dashboard, {target: this.fileUpload.nativeElement})
     .use(ImageEditor, { target: Dashboard })
     .use(Cos, {
       bucket: 'maoyetrpg-1254195378', // bucket id
