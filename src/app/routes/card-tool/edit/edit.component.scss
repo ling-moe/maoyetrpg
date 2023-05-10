@@ -1,20 +1,13 @@
-.fixed-table {
-  overflow-y: scroll;
-  width: 100%;
-  height: 500px;
-}
-
 .mat-column-rate {
   justify-content: center;
 }
 
-.mat-mdc-table {
-  max-height: 200px;
+.mat-table {
+  height: 300px;
   overflow: auto;
 }
-
-.example-full-width {
-  width: 80%;
+.mat-header-cell, .mat-footer-cell, .mat-cell {
+  min-width: 80px;
 }
 
 .inline-edit {
@@ -27,6 +20,75 @@
 .rate-number{
   width: 30px;
   text-align: center;
+}
+
+.padding-top-20{
+  padding: 20px;
+}
+.flex-wrap{
+  flex-wrap: wrap;
+}
+
+.file-upload{
+  width: 30%;
+}
+
+.info-fields{
+  width: 70%;
+}
+
+.props-chart{
+  width: 30%;
+}
+
+.base-props-fields{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  width: 45%;
+}
+
+.advance-props-fields{
+  display: flex;
+  align-items: center;
+  width: 45%;
+}
+
+.props-form{
+  display: flex;align-items: center;
+}
+.props-wrap{
+  display: flex;
+  width: 70%;
+  flex-direction: column;
+  justify-content: center;
+}
+.props-icon{
+  margin: 0 auto;
+}
+
+.flex-col{
+  flex-direction: column;
+}
+
+.align-items-center{
+  align-items: center;
+}
+
+.rate-border{
+  border: 1px dashed;
+}
+
+.max-width-fixed-200{
+  max-width: 120px;
+  width: 200px;
+}
+
+.tips-icon{
+  font-size: 16px;
+  width: 18px;
+  height: 20px;
 }
 
 :host {
@@ -56,4 +118,45 @@
       display: none;
     }
   }
+}
+
+:host{
+  width: 60%;
+  display: block;
+  margin: 0 auto;
+}
+
+@media only screen and (max-width: 480px) {
+  :host{
+    width: 100%;
+  }
+
+  .file-upload{
+    width: 100%;
+  }
+
+  .info-fields{
+    width: 100%;
+  }
+
+  .props-chart{
+    width: 100%;
+  }
+
+  .base-props-fields{
+    width: 100%;
+  }
+
+  .advance-props-fields{
+    width: 100%;
+  }
+
+  .props-wrap{
+    width: 100%;
+  }
+
+  .props-icon{
+    display: none;
+  }
+
 }
