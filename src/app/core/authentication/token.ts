@@ -1,3 +1,5 @@
+import { toNumber } from 'lodash';
+import * as dayjs from 'dayjs';
 import { base64, capitalize, currentTimestamp, timeLeft } from './helpers';
 import { Token, User } from './interface';
 
@@ -21,7 +23,7 @@ export abstract class BaseToken {
   }
 
   get exp(): number | void {
-    return this.attributes.exp;
+    return Math.ceil(dayjs(this.attributes.exp).toDate().getTime() / 1000);
   }
 
   valid(): boolean {

@@ -1,13 +1,4 @@
-import {
-  AfterViewInit,
-  Component,
-  ElementRef,
-  OnDestroy,
-  OnInit,
-  ViewChild,
-  Provider,
-  ChangeDetectorRef,
-} from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import {
   FormBuilder,
   FormControl,
@@ -22,12 +13,36 @@ import { User, AuthService } from '@core';
 import { FormlyFieldConfig, FormlyFormOptions } from '@ngx-formly/core';
 import { map, filter, pairwise, startWith } from 'rxjs/operators';
 import { CardToolService } from '../card-tool.service';
-import * as echarts from 'echarts';
-import { groupBy, shuffle, zipObject } from 'lodash';
+import { shuffle, toNumber, zipObject } from 'lodash';
 import { MatSelectChange } from '@angular/material/select';
-
-type CardSkill = { type: string; skill: any[] };
-type SkillValue = { pro: number; interest: number };
+import {
+  Bz,
+  BzElement,
+  FreeSkillNum,
+  FreeSkillRecord,
+  Job,
+  More,
+  Name,
+  RoleCard,
+  RoleJob,
+  Skill,
+  SkillControl,
+  Skselect,
+  SkselectKey,
+  StatusBar,
+  Weapon,
+  WeaponsGroup,
+} from './types';
+import {
+  calcCashLevel,
+  calcHitAddAndPhysique,
+  calcMov,
+  liveLevel,
+  Time,
+  WeaponCategory,
+} from './coc-util';
+import { EChartsType } from 'echarts/core';
+import { echarts } from './echart.config';
 
 @Component({
   selector: 'app-card-tool-Edit',
@@ -37,138 +52,175 @@ type SkillValue = { pro: number; interest: number };
 export class CardToolEditComponent implements OnInit {
   user!: User;
   avatar?: string;
-  job: any[] = [];
-  weapons: any[] = [];
-  personChart?: echarts.ECharts;
+  jobs: Job[] = [];
+  weapons: WeaponsGroup[] = [];
+  personChart?: EChartsType;
   @ViewChild('personChart', { static: true })
   chartEle?: ElementRef;
-  weaponsColumn = ['name', 'skill', 'dam', 'tho', 'range', 'round', 'price', 'err', 'time', 'operation'];
-  currentSkills: any[] = [];
-  skselects: any = {};
-  freeSkill: any = {};
+  weaponsColumn = [
+    'name',
+    'skill',
+    'dam',
+    'tho',
+    'range',
+    'round',
+    'price',
+    'err',
+    'time',
+    'operation',
+  ];
+  currentWeapons: Weapon[] = [];
+  currentSkills: Skill[] = [];
+  skselects!: Skselect;
+  freeSkill: FreeSkillRecord = {};
+  form = new FormGroup({
+    skill: this.fb.array<FormGroup<SkillControl>>([]),
+    things: this.fb.array([new FormControl('')]),
+    mov: new FormControl(0),
+    player: new FormControl(''),
+    cash: new FormControl(''),
+    level: new FormControl(''),
+    assetsDesc: new FormControl(''),
+    hp: new FormControl(''),
+    mp: new FormControl(''),
+    san: new FormControl(''),
+  });
+  model: RoleCard = {
+    job: <RoleJob>{},
+    hp: <StatusBar>{},
+    mp: <StatusBar>{},
+    san: <StatusBar>{},
+    attribute: {},
+    bz: [],
+    elsesk: [],
+    jobwt: [],
+    health: '',
+    mind: '',
+    money: [],
+    more: <More>{},
+    name: <Name>{},
+    story: {},
+    things: [],
+    touniang: '',
+    userid: 0,
+    weapons: [],
+    zdy: [],
+  };
+
+  skillArray = this.form.get('skill') as FormArray<FormGroup<SkillControl>>;
+  itemArray = this.form.get('things') as FormArray<FormControl<string | null>>;
+
+  skills: Skill[] = [];
+
   constructor(
     private auth: AuthService,
     private cardToolService: CardToolService,
-    private fb: FormBuilder,
-    private cdr: ChangeDetectorRef
+    private fb: FormBuilder
   ) {}
 
-  skillForm = new FormGroup({ skill: this.fb.array([]) });
-  skillArray = this.skillForm.get('skill') as FormArray;
-  itemForm = new FormGroup({ item: this.fb.array([new FormControl()]) });
-  itemArray = this.itemForm.get('item') as FormArray;
-
-  skills: any[] = [];
-
-  weaponCategory: any = {
-    cg: '常规武器',
-    sq: '手枪',
-    bbq: '半自动步枪',
-    tsq: '突击步枪',
-    xdq: '霰弹枪',
-    cfq: '冲锋枪',
-    jjbq: '狙击步枪',
-    jq: '机枪',
-    qt: '其它武器',
-  };
-
   ngOnInit() {
-    this.auth.user().subscribe(user => (this.user = user));
-    this.cardToolService.getJobAndSkill().subscribe(res => {
-      this.job = res.job;
-      this.skills = res.skills;
-      this.skselects = res.skselect[0];
-      this.weapons = Object.keys(res.weapons).map((key: string) => ({
-        category: this.weaponCategory[key],
-        weapons: res.weapons[key],
+    this.auth.user().subscribe(user => {
+      this.user = user;
+      this.personInfoFields = this.createPersonInfoFields();
+    });
+    this.cardToolService.getJobAndSkill().subscribe(cocConfig => {
+      this.jobs = cocConfig.job;
+      this.skills = cocConfig.skills;
+      this.skselects = cocConfig.skselect[0];
+      this.weapons = Object.keys(cocConfig.weapons).map(key => ({
+        category: WeaponCategory[key],
+        weapons: cocConfig.weapons[key],
       }));
     });
     this.personChart = echarts.init(this.chartEle!.nativeElement);
     this.personChart.resize({ width: 320, height: 350 });
-    this.skillArray.valueChanges.subscribe((val: SkillValue[]) => {
-      this.currentJobSkillPoint = val.reduce((total, cur) => {
-        return (total += Number(cur.pro ?? 0));
-      }, 0);
-      this.currentInterestSkillPoint = val.reduce((total, cur) => {
-        return (total += Number(cur.interest ?? 0));
-      }, 0);
-    });
+    this.subcribeSkillPoint();
     this.initPersonChart();
   }
 
-  credit(){
-    const obj = this.skillForm.getRawValue().skill[0] as any;
-    if(!obj) return;
-    return Number(obj.ini??0)+Number(obj.grow??0)+Number(obj.pro??0)+Number(obj.interest??0);
+  private subcribeSkillPoint() {
+    this.skillArray.valueChanges.subscribe(val => {
+      this.currentJobSkillPoint = val.reduce((total, cur) => {
+        return (total += toNumber(cur.pro ?? 0));
+      }, 0);
+      this.currentInterestSkillPoint = val.reduce((total, cur) => {
+        return (total += toNumber(cur.interest ?? 0));
+      }, 0);
+    });
   }
 
-  live(){
-    const obj = this.skillForm.getRawValue().skill[0] as any;
-    if(!obj) return;
-    const total = Number(obj.ini??0)+Number(obj.grow??0)+Number(obj.pro??0)+Number(obj.interest??0);
-    if(total === 0){
-      return '身无分文';
-    }else if(total < 10){
-      return '贫穷';
-    }else if(total < 50){
-      return '标准';
-    }else if(total < 90){
-      return '小康';
-    }else if(total < 99){
-      return '富裕';
-    }else{
-      return '富豪';
-    }
+  credit() {
+    const obj = this.form.getRawValue().skill[0];
+    if (!obj) return;
+    return (
+      toNumber(obj.ini ?? 0) +
+      toNumber(obj.grow ?? 0) +
+      toNumber(obj.pro ?? 0) +
+      toNumber(obj.interest ?? 0)
+    );
   }
 
+  live() {
+    const obj = this.form.getRawValue().skill[0];
+    if (!obj) return;
+    const total =
+      toNumber(obj.ini ?? 0) +
+      toNumber(obj.grow ?? 0) +
+      toNumber(obj.pro ?? 0) +
+      toNumber(obj.interest ?? 0);
+    return liveLevel(total);
+  }
 
-
-  addItem(){
+  addItem() {
     this.itemArray.push(new FormControl());
   }
-  convert(item: AbstractControl): FormControl{
+  convert(item: AbstractControl): FormControl {
     return item as FormControl;
   }
 
-  iniChange(v: MatSelectChange, item: any, type: string) {
-    const skill = this.skselects[type][0].all as any[];
-    item.patchValue({ ini: skill[v.value].ini ?? 0 });
+  iniChange(v: MatSelectChange, item: FormGroup<SkillControl>, type: SkselectKey) {
+    const skill = this.skselects[type][0].all;
+    item.patchValue({ ini: toNumber(skill[v.value].ini ?? 0) });
   }
 
-  addFreeSkill(v: MatSelectChange, chooseType: string) {
-    this.freeSkill[chooseType] -= 1;
+  addFreeSkill(v: MatSelectChange, chooseType: FreeSkillNum) {
+    this.freeSkill[chooseType]! -= 1;
     this.currentSkills.push(this.skills[v.value]);
-    this.skillArray.push(this.initSkillLine(this.skills[v.value]));
+    this.skillArray.push(this.initSkillLine(this.skills[v.value], true));
   }
 
-  jobLimitSkill(type: string) {
-    const skill = this.skselects[type][0].all as any[];
-    const limitSkill = this.skselects[type][0][(this.job[this.model.job] as any).job] as any[];
+  jobLimitSkill(type: SkselectKey) {
+    const skill = this.skselects[type][0].all;
+    const limitSkill = this.skselects[type][0][this.jobs[+this.model.name.jobval].job];
     if (limitSkill) {
       return limitSkill.map(num => skill[num.num]);
     }
     return skill;
   }
 
-  chooseSkill(chooseType: string) {
+  chooseSkill(chooseType: FreeSkillNum) {
     if (chooseType === 'all') {
       return this.skills;
     }
-    const options = (this.job[this.model.job] as any)[chooseType] as number[];
-    return options.map(option => this.skills[option]);
+    const options = this.jobs[+this.model.name.jobval][chooseType];
+    if (chooseType === 'two') {
+      return (options[0] as number[]).map(option => this.skills[option]);
+    }
+    return (options as number[]).map(option => this.skills[option]);
   }
 
   addWeapon(e: MatSelectChange) {
-    this.model.weapons = [...this.model.weapons, e.value];
+    this.currentWeapons = [...this.currentWeapons, e.value];
   }
 
-  initSkillLine(skill: any) {
+  initSkillLine(skill: Skill, isFree: boolean): FormGroup<SkillControl> {
     const formGroup = this.fb.group({
+      num: [toNumber(skill.num ?? 0)],
       name: [{ value: skill.name, disabled: !skill.select }],
-      ini: [{ value: skill.ini, disabled: true }],
-      grow: [skill.grow, Validators.min(0)],
+      ini: [{ value: toNumber(skill.ini ?? 0), disabled: true }],
+      grow: [toNumber(skill.grow ?? 0), Validators.min(0)],
       pro: [
-        skill.pro,
+        toNumber(skill.pro ?? 0),
         [
           Validators.min(0),
           requiredDynamicMax(
@@ -178,7 +230,7 @@ export class CardToolEditComponent implements OnInit {
         ],
       ],
       interest: [
-        skill.interest,
+        toNumber(skill.interest ?? 0),
         [
           Validators.min(0),
           requiredDynamicMax(
@@ -187,82 +239,88 @@ export class CardToolEditComponent implements OnInit {
           ),
         ],
       ],
+      isFree: [isFree],
     });
     formGroup.controls.pro.valueChanges
       .pipe(startWith(null), pairwise())
-      .subscribe(
-        ([prev, next]: [number, number]) => ((formGroup.controls.pro as any).preValue = next)
-      );
+      .subscribe(([_, next]) => ((formGroup.controls.pro as any).preValue = next));
     formGroup.controls.interest.valueChanges
       .pipe(startWith(null), pairwise())
-      .subscribe(
-        ([prev, next]: [number, number]) => ((formGroup.controls.interest as any).preValue = next)
-      );
-      this.form.patchValue({
-        mov: this.calcMov(
-          Number(this.model.str ?? 0),
-          Number(this.model.dex ?? 0),
-          Number(this.model.siz ?? 0),
-          Number(this.model.age ?? 0)
-        ),
-      });
+      .subscribe(([_, next]) => ((formGroup.controls.interest as any).preValue = next));
+    this.form.patchValue({
+      mov: calcMov(
+        toNumber(this.model.attribute.str ?? 0),
+        toNumber(this.model.attribute.dex ?? 0),
+        toNumber(this.model.attribute.siz ?? 0),
+        toNumber(this.model.attribute.age ?? 0)
+      ),
+    });
     return formGroup;
   }
 
   submit() {
-    alert(JSON.stringify(Object.assign(this.model, { avatar: this.avatar })));
+    const { str, con, pow, dex, app, siz, int, edu, hp, mp, san } = this.model.attribute;
+    const { cash, level, assetsDesc } = this.form.value;
+    this.model.attribute.all = 0 + str + con + pow + dex + app + siz + int + edu;
+    const hpGroup = hp.split('/');
+    const mpGroup = mp.split('/');
+    const sanGroup = san.split('/');
+    this.model.hp = { have: toNumber(hpGroup[0] ?? 0), total: toNumber(hpGroup[0] ?? 1) };
+    this.model.mp = { have: toNumber(mpGroup[0] ?? 0), total: toNumber(mpGroup[0] ?? 1) };
+    this.model.san = { have: toNumber(sanGroup[0] ?? 0), total: toNumber(sanGroup[0] ?? 1) };
+    this.model.health = this.model.attribute.health;
+    this.model.mind = this.model.attribute.mind;
+    this.model.job.value = `${this.model.name.jobval}`;
+    // TODO 这的技能缺少值
+    this.model.bz = this.form
+      .get('skill')!
+      .value.map(skill => ({ ...skill, bz: true } as unknown as BzElement));
+    this.model.job.all = this.form
+      .get('skill')!
+      .value.filter(skill => skill.isFree)
+      .map(skill => ({ ...skill, bz: true } as unknown as Bz));
+    this.model.jobwt = [+str, +con, +pow, +dex, +app, +siz, +int, +edu];
+    this.model.money = [`${this.credit()}%`, this.live()!, cash!, level!, assetsDesc!];
+    this.model.things = this.form.get('things')?.value as string[];
+    this.model.weapons = this.currentWeapons.map(weapon => weapon.value);
+    this.model.userid = this.user.userid!;
+    console.log(this.model);
+    this.cardToolService.createRoleCard(this.model).subscribe(res => {
+      console.log(res);
+    });
   }
 
-  calcRate(item: any, sub: number) {
+  calcRate(item: FormGroup<SkillControl>, sub: number) {
     const skill = item.getRawValue();
     const rate = Math.floor(
-      (Number(skill.ini ?? 0) +
-        Number(skill.grow ?? 0) +
-        Number(skill.pro ?? 0) +
-        Number(skill.interest ?? 0)) /
+      (toNumber(skill.ini ?? 0) +
+        toNumber(skill.grow ?? 0) +
+        toNumber(skill.pro ?? 0) +
+        toNumber(skill.interest ?? 0)) /
         sub
     );
-    if(skill.name === '信用评级'){
-      let cash, level;
-      if(rate === 0){
-        cash = '15';
-        level = '$15';
-      }else if(rate < 10){
-        cash = 'CR*40';
-        level = '$300';
-      }else if(rate < 50){
-        cash = 'CR*100';
-        level = '$1500';
-      }else if(rate < 90){
-        cash = 'CR*200';
-        level = '$7500';
-      }else{
-        cash = '1.5M';
-        level = '$150000';
-      }
-      this.form.patchValue({
-        cash,level
-      }, {
-        emitEvent: false
+    if (skill.name === '信用评级') {
+      this.form.patchValue(calcCashLevel(rate), {
+        emitEvent: false,
       });
     }
     return rate;
   }
 
-  modifyAvatar(avatorUrl: any) {
-    this.avatar = avatorUrl;
+  modifyAvatar(avatorUrl: string) {
+    this.model.name.touxiang = avatorUrl;
   }
 
-  getJobDesc(index: number): string {
-    return (this.job[index] as any)?.intro.proskill;
+  getJobDesc(index: string): string {
+    return this.jobs[+index]?.intro.proskill;
   }
 
-  getHonesty(index: number): string {
-    return (this.job[index] as any)?.intro.honesty;
+  getHonesty(index: string): string {
+    return this.jobs[+index]?.intro.honesty;
   }
 
-  getJobSkillPoint(index: number): string {
-    return (this.job[index] as any)?.intro.propoint ?? '请先选择职业';
+  getJobSkillPoint(index: string): string {
+    return this.jobs[+index]?.intro.propoint ?? '请先选择职业';
   }
 
   initPersonChart() {
@@ -282,6 +340,18 @@ export class CardToolEditComponent implements OnInit {
           { name: '教育', max: 100 },
         ],
       },
+      series: [
+        {
+          name: '人物属性',
+          type: 'radar',
+          data: [
+            {
+              value: [],
+              name: '属性分布',
+            },
+          ],
+        },
+      ],
     });
   }
 
@@ -302,46 +372,6 @@ export class CardToolEditComponent implements OnInit {
     });
   }
 
-  calcHitAddAndPhysique(str: number, siz: number) {
-    const t = str + siz;
-    console.log(t);
-    if (t >= 2 && t <= 64) {
-      return { hitAdd: '-2', physique: -2 };
-    } else if (t >= 65 && t <= 84) {
-      return { hitAdd: '-1', physique: -1 };
-    } else if (t >= 85 && t <= 124) {
-      return { hitAdd: '无', physique: 0 };
-    } else if (t >= 125 && t <= 164) {
-      return { hitAdd: '+1D4', physique: 1 };
-    } else if (t >= 165 && t <= 204) {
-      return { hitAdd: '+1D6', physique: 2 };
-    } else {
-      return { hitAdd: '无', physique: 0 };
-    }
-  }
-
-  calcMov(str: number, dex: number, siz: number, age: number) {
-    let mov = 8;
-    if (str < siz && dex < siz) {
-      mov = 7;
-    } else if (str > siz && dex > siz) {
-      mov = 9;
-    } else {
-      mov = 8;
-    }
-    if (age > 40 && age <= 49) {
-      mov -= 1;
-    } else if (age > 50 && age <= 59) {
-      mov -= 2;
-    } else if (age > 60 && age <= 69) {
-      mov -= 3;
-    } else if (age > 70 && age <= 79) {
-      mov -= 4;
-    } else if (age > 80 && age <= 89) {
-      mov -= 5;
-    }
-    return mov;
-  }
   randomProps() {
     this.form.patchValue(
       zipObject(
@@ -351,203 +381,182 @@ export class CardToolEditComponent implements OnInit {
     );
   }
 
-  get propTotal() {
+  get propsTotal() {
     return ['str', 'con', 'pow', 'dex', 'app', 'siz', 'int', 'edu'].reduce(
-      (total, key) => total + Number(this.model[key] ?? 0),
+      (total, key) => total + toNumber(this.model.attribute[key] ?? 0),
       0
     );
   }
 
   currentJobSkillPoint = 0;
+  currentInterestSkillPoint = 0;
 
   get totalJobSkillPoint(): number {
     if (!this.model.job) {
       return 0;
     }
-    const job = this.job[this.model.job] as any;
-    const formula = job?.pro as any[];
+    const job = this.jobs[+this.model.name.jobval];
+    const formula = job?.pro;
     return formula?.reduce(
-      (total, item) => total + Number(this.model[item[0].name] ?? 0) * item[0].num,
+      // TODO 存在这种情况 需要询问后解决
+      // [
+      //   [{ "name": "edu", "num": 2 }],
+      //   [
+      //     { "name": "str", "num": 2 },
+      //     { "name": "dex", "num": 2 }
+      //   ]
+      // ]
+      (total, item) => total + toNumber(this.model.attribute[item[0].name] ?? 0) * item[0].num,
       0
     );
   }
 
-  currentInterestSkillPoint = 0;
-
   get totalInterestSkillPoint(): number {
-    return Number(this.model.int ?? 0) * 2;
-  }
-  calcChecked(skill: any) {
-    const flag = skill.growControl.value || skill.proControl.value || skill.interestControl.value;
-    return flag;
-  }
-  changeChecked($event: any, skill: any) {
-    console.log(skill);
+    return toNumber(this.model.attribute.int ?? 0) * 2;
   }
 
-  form = new FormGroup({});
+  personInfoFields!: FormlyFieldConfig[];
+  createPersonInfoFields(){
+    return [
+      {
+        fieldGroupClassName: 'row',
+        fieldGroup: [
+          {
+            className: 'col-md-6',
+            key: 'chartname',
+            type: 'input',
+            props: {
+              label: '姓名',
+              placeholder: '你叫什么名字？',
+              required: true,
+            },
+          },
+          {
+            className: 'col-md-6',
+            key: 'sex',
+            type: 'input',
+            props: {
+              label: '性别',
+              placeholder: '虽然正常来说只有男或女，可是也保不准有武装直升机？',
+              required: true,
+            },
+          },
 
-  model: any = { currentJobSkillPoint: 0, weapons: [] };
-  options: FormlyFormOptions = {};
-
-  personInfoFields: FormlyFieldConfig[] = [
-    {
-      fieldGroupClassName: 'row',
-      fieldGroup: [
-        {
-          className: 'col-md-6',
-          key: 'name',
-          type: 'input',
-          props: {
-            label: '姓名',
-            placeholder: '你叫什么名字？',
-            required: true,
+          {
+            className: 'col-md-6',
+            key: 'player',
+            type: 'input',
+            props: {
+              label: '玩家',
+              placeholder: '本尊在此',
+              required: true,
+            },
+            defaultValue: this.user?.name
           },
-        },
-        {
-          className: 'col-md-6',
-          key: 'sex',
-          type: 'input',
-          props: {
-            label: '性别',
-            placeholder: '虽然正常来说只有男或女，可是也保不准有武装直升机？',
-            required: true,
-          },
-        },
-
-        {
-          className: 'col-md-6',
-          key: 'player',
-          type: 'input',
-          props: {
-            label: '玩家',
-            placeholder: '本尊在此',
-            required: true,
-          },
-          defaultValue: this.user?.name,
-        },
-        {
-          className: 'col-md-6',
-          key: 'age',
-          type: 'input',
-          props: {
-            label: '年龄',
-            placeholder: '您贵庚？',
-            required: true,
-          },
-          hooks: {
-            onChanges: (field: FormlyFieldConfig) => {
-              field.options?.fieldChanges
-                ?.pipe(filter(e => e.field === field && e.value !== null))
-                .subscribe(e => {
-                  this.form.patchValue({
-                    mov: this.calcMov(
-                      Number(this.model.str ?? 0),
-                      Number(this.model.dex ?? 0),
-                      Number(this.model.siz ?? 0),
-                      Number(this.model.age ?? 0)
-                    ),
+          {
+            className: 'col-md-6',
+            key: 'ages',
+            type: 'input',
+            props: {
+              label: '年龄',
+              placeholder: '您贵庚？',
+              required: true,
+            },
+            hooks: {
+              onChanges: (field: FormlyFieldConfig) => {
+                field.options?.fieldChanges
+                  ?.pipe(filter(e => e.field === field && e.value !== null))
+                  .subscribe(e => {
+                    this.form.patchValue({
+                      mov: calcMov(
+                        toNumber(this.model.attribute.str ?? 0),
+                        toNumber(this.model.attribute.dex ?? 0),
+                        toNumber(this.model.attribute.siz ?? 0),
+                        toNumber(this.model.attribute.age ?? 0)
+                      ),
+                    });
                   });
-                });
+              },
             },
           },
-        },
-        {
-          className: 'col-md-6',
-          key: 'job',
-          type: 'select',
-          props: {
-            label: '职业',
-            placeholder: '师傅你是做什么工作的？',
-            required: true,
-            options: this.cardToolService
-              .getJobAndSkill()
-              .pipe(
-                map(res => (res.job as any[]).map(job => ({ value: job.value, label: job.job })))
-              ),
-          },
-          hooks: {
-            onChanges: (field: FormlyFieldConfig) => {
-              field.options?.fieldChanges
-                ?.pipe(filter(e => e.field === field && e.value !== null))
-                .subscribe(e => {
-                  const curJob = this.job[e.value];
-                  this.skillArray.clear();
-                  this.freeSkill = {};
-                  this.currentSkills = (curJob.skills as number[])
-                    .map(skillNum => this.skills[skillNum])
-                    .sort((a, b) => a.num - b.num);
-                  // 记录剩余可选技能数量
-                  if (curJob.fouroTwo.length !== 0) {
-                    this.freeSkill.fouroTwo = 2;
-                  }
-                  if (curJob.fouro.length !== 0) {
-                    this.freeSkill.fouro = 1;
-                  }
-                  if (curJob.two.length !== 0) {
-                    this.freeSkill.two = 1;
-                  }
-                  if (curJob.all !== 0) {
-                    this.freeSkill.all = curJob.all;
-                  }
-                  this.currentSkills
-                    .map(skill => this.initSkillLine(skill))
-                    .forEach(skill => this.skillArray.push(skill));
-                });
+          {
+            className: 'col-md-6',
+            key: 'jobval',
+            type: 'select',
+            props: {
+              label: '职业',
+              placeholder: '师傅你是做什么工作的？',
+              required: true,
+              options: this.cardToolService
+                .getJobAndSkill()
+                .pipe(map(res => res.job.map(job => ({ value: job.value, label: job.job })))),
+            },
+            hooks: {
+              onChanges: (field: FormlyFieldConfig) => {
+                field.options?.fieldChanges
+                  ?.pipe(filter(e => e.field === field && e.value !== null))
+                  .subscribe(e => {
+                    const curJob = this.jobs[e.value];
+                    this.skillArray.clear();
+                    this.freeSkill = {};
+                    this.currentSkills = (curJob.skills as number[])
+                      .map(skillNum => this.skills[skillNum])
+                      .sort((a, b) => a.num - b.num);
+                    // 记录剩余可选技能数量
+                    if (curJob.fouroTwo.length !== 0) {
+                      this.freeSkill.fouroTwo = 2;
+                    }
+                    if (curJob.fouro.length !== 0) {
+                      this.freeSkill.fouro = 1;
+                    }
+                    if (curJob.two.length !== 0) {
+                      this.freeSkill.two = 1;
+                    }
+                    if (curJob.all !== 0) {
+                      this.freeSkill.all = curJob.all;
+                    }
+                    this.currentSkills
+                      .map(skill => this.initSkillLine(skill, false))
+                      .forEach(skill => this.skillArray.push(skill));
+                  });
+              },
             },
           },
-        },
-        {
-          className: 'col-md-6',
-          key: 'address',
-          type: 'input',
-          props: {
-            label: '住地',
-            placeholder: '你现在住哪?',
-            required: true,
+          {
+            className: 'col-md-6',
+            key: 'address',
+            type: 'input',
+            props: {
+              label: '住地',
+              placeholder: '你现在住哪?',
+              required: true,
+            },
           },
-        },
-        {
-          className: 'col-md-6',
-          key: 'era',
-          type: 'select',
-          props: {
-            label: '时代',
-            placeholder: '你是哪个时代的人啊',
-            required: true,
-            options: [
-              { value: 0, label: '1820~1920' },
-              { value: 1, label: '1920~1990' },
-              { value: 2, label: '1990~2010' },
-              { value: 3, label: '2010~至今' },
-              { value: 4, label: '文艺复兴时代' },
-              { value: 5, label: '英国维多利亚时代' },
-              { value: 6, label: '二战时期' },
-              { value: 7, label: '中华民国时期' },
-              { value: 8, label: '美苏冷战时期' },
-              { value: 9, label: '大萧条(禁酒令)时期' },
-              { value: 10, label: '嬉皮士时期' },
-              { value: 11, label: '蒸汽朋克' },
-              { value: 12, label: '架空历史' },
-              { value: 13, label: '近未来' },
-              { value: 14, label: '远未来' },
-              { value: 15, label: '其他' },
-            ],
+          {
+            className: 'col-md-6',
+            key: 'time',
+            type: 'select',
+            props: {
+              label: '时代',
+              placeholder: '你是哪个时代的人啊',
+              required: true,
+              options: Time,
+            },
           },
-        },
-        {
-          className: 'col-md-6',
-          key: 'home',
-          type: 'input',
-          props: {
-            label: '故乡',
-            placeholder: '是M18星云吗？',
-            required: true,
+          {
+            className: 'col-md-6',
+            key: 'hometown',
+            type: 'input',
+            props: {
+              label: '故乡',
+              placeholder: '是M18星云吗？',
+              required: true,
+            },
           },
-        },
-      ],
-    },
-  ];
+        ],
+      },
+    ];
+  }
 
   personBaseFields: FormlyFieldConfig[] = [
     {
@@ -555,8 +564,17 @@ export class CardToolEditComponent implements OnInit {
       hooks: {
         onInit: (field: FormlyFieldConfig) => {
           field.options?.fieldChanges?.subscribe(e => {
-            const { str, con, pow, dex, app, siz, int, edu } = this.model;
-            this.updatePersonChart([str, con, pow, dex, app, siz, int, edu]);
+            const { str, con, pow, dex, app, siz, int, edu } = this.model.attribute;
+            this.updatePersonChart([
+              toNumber(str ?? 0),
+              toNumber(con ?? 0),
+              toNumber(pow ?? 0),
+              toNumber(dex ?? 0),
+              toNumber(app ?? 0),
+              toNumber(siz ?? 0),
+              toNumber(int ?? 0),
+              toNumber(edu ?? 0),
+            ]);
           });
         },
       },
@@ -575,15 +593,15 @@ export class CardToolEditComponent implements OnInit {
                 ?.pipe(filter(e => e.field === field && e.value !== null))
                 .subscribe(e => {
                   this.form.patchValue({
-                    mov: this.calcMov(
-                      Number(this.model.str ?? 0),
-                      Number(this.model.dex ?? 0),
-                      Number(this.model.siz ?? 0),
-                      Number(this.model.age ?? 0)
+                    mov: calcMov(
+                      toNumber(this.model.attribute.str ?? 0),
+                      toNumber(this.model.attribute.dex ?? 0),
+                      toNumber(this.model.attribute.siz ?? 0),
+                      toNumber(this.model.attribute.age ?? 0)
                     ),
-                    ...this.calcHitAddAndPhysique(
-                      Number(this.model.str ?? 0),
-                      Number(this.model.siz ?? 0)
+                    ...calcHitAddAndPhysique(
+                      toNumber(this.model.attribute.str ?? 0),
+                      toNumber(this.model.attribute.siz ?? 0)
                     ),
                   });
                 });
@@ -603,10 +621,13 @@ export class CardToolEditComponent implements OnInit {
               field.options?.fieldChanges
                 ?.pipe(filter(e => e.field === field && e.value !== null))
                 .subscribe(() => {
+                  const t = Math.round(
+                    (toNumber(this.model.attribute.con ?? 0) +
+                      toNumber(this.model.attribute.siz ?? 0)) /
+                      10
+                  );
                   this.form.patchValue({
-                    hp: Math.round(
-                      (Number(this.model.con ?? 0) + Number(this.model.siz ?? 0)) / 10
-                    ),
+                    hp: `${t}/${t}`,
                   });
                 });
             },
@@ -625,19 +646,22 @@ export class CardToolEditComponent implements OnInit {
               field.options?.fieldChanges
                 ?.pipe(filter(e => e.field === field && e.value !== null))
                 .subscribe(e => {
+                  const t = Math.round(
+                    (toNumber(this.model.attribute.con ?? 0) +
+                      toNumber(this.model.attribute.siz ?? 0)) /
+                      10
+                  );
                   this.form.patchValue({
-                    hp: Math.round(
-                      (Number(this.model.con ?? 0) + Number(this.model.siz ?? 0)) / 10
+                    hp: `${t}/${t}`,
+                    mov: calcMov(
+                      toNumber(this.model.attribute.str ?? 0),
+                      toNumber(this.model.attribute.dex ?? 0),
+                      toNumber(this.model.attribute.siz ?? 0),
+                      toNumber(this.model.attribute.age ?? 0)
                     ),
-                    mov: this.calcMov(
-                      Number(this.model.str ?? 0),
-                      Number(this.model.dex ?? 0),
-                      Number(this.model.siz ?? 0),
-                      Number(this.model.age ?? 0)
-                    ),
-                    ...this.calcHitAddAndPhysique(
-                      Number(this.model.str ?? 0),
-                      Number(this.model.siz ?? 0)
+                    ...calcHitAddAndPhysique(
+                      toNumber(this.model.attribute.str ?? 0),
+                      toNumber(this.model.attribute.siz ?? 0)
                     ),
                   });
                 });
@@ -658,11 +682,11 @@ export class CardToolEditComponent implements OnInit {
                 ?.pipe(filter(e => e.field === field && e.value !== null))
                 .subscribe(e => {
                   this.form.patchValue({
-                    mov: this.calcMov(
-                      Number(this.model.str ?? 0),
-                      Number(this.model.dex ?? 0),
-                      Number(this.model.siz ?? 0),
-                      Number(this.model.age ?? 0)
+                    mov: calcMov(
+                      toNumber(this.model.attribute.str ?? 0),
+                      toNumber(this.model.attribute.dex ?? 0),
+                      toNumber(this.model.attribute.siz ?? 0),
+                      toNumber(this.model.attribute.age ?? 0)
                     ),
                   });
                 });
@@ -697,13 +721,13 @@ export class CardToolEditComponent implements OnInit {
           },
           hooks: {
             onChanges: (field: FormlyFieldConfig) => {
-              console.log(field);
               field.options?.fieldChanges
                 ?.pipe(filter(e => e.field === field && e.value !== null))
                 .subscribe(e => {
+                  const t = Math.round(toNumber(e.value ?? 0) / 5);
                   this.form.patchValue({
-                    mp: Math.round(Number(e.value ?? 0) / 5),
-                    san: Number(e.value ?? 0),
+                    mp: `${t}/${t}`,
+                    san: `${toNumber(e.value ?? 0)}/99`,
                   });
                 });
             },
@@ -773,7 +797,7 @@ export class CardToolEditComponent implements OnInit {
 
         {
           className: 'col-sm-4',
-          key: 'physique',
+          key: 'build',
           type: 'input',
           props: {
             label: '体格',
@@ -782,7 +806,7 @@ export class CardToolEditComponent implements OnInit {
         },
         {
           className: 'col-sm-4',
-          key: 'hitAdd',
+          key: 'db',
           type: 'input',
           props: {
             label: '伤害加值',
@@ -791,7 +815,7 @@ export class CardToolEditComponent implements OnInit {
         },
         {
           className: 'col-sm-12',
-          key: 'bodyStatus',
+          key: 'health',
           type: 'select',
           props: {
             label: '身体状态',
@@ -808,7 +832,7 @@ export class CardToolEditComponent implements OnInit {
         },
         {
           className: 'col-sm-12',
-          key: 'mentalStatus',
+          key: 'mind',
           type: 'select',
           props: {
             label: '精神状态',
@@ -825,27 +849,11 @@ export class CardToolEditComponent implements OnInit {
     },
   ];
 
-  weaponsProps: FormlyFieldConfig[] = [
+  storyFields: FormlyFieldConfig[] = [
     {
       fieldGroup: [
         {
-          key: 'weapons',
-          type: 'select',
-          props: {
-            label: '武器',
-            multiple: true,
-            options: [{ value: 1, label: 'Knuckles' }],
-          },
-        },
-      ],
-    },
-  ];
-
-  storyProps: FormlyFieldConfig[] = [
-    {
-      fieldGroup: [
-        {
-          key: 'appearance',
+          key: 'miaoshu',
           type: 'textarea',
           props: {
             label: '外貌',
@@ -855,7 +863,7 @@ export class CardToolEditComponent implements OnInit {
           },
         },
         {
-          key: 'thought',
+          key: 'xinnian',
           type: 'textarea',
           props: {
             label: '思想',
@@ -865,7 +873,7 @@ export class CardToolEditComponent implements OnInit {
           },
         },
         {
-          key: 'keyPerson',
+          key: 'zyzr',
           type: 'textarea',
           props: {
             label: '重要之人',
@@ -875,7 +883,7 @@ export class CardToolEditComponent implements OnInit {
           },
         },
         {
-          key: 'keyLocation',
+          key: 'feifanzd',
           type: 'textarea',
           props: {
             label: '意义非凡之地',
@@ -885,7 +893,7 @@ export class CardToolEditComponent implements OnInit {
           },
         },
         {
-          key: 'keyItem',
+          key: 'bgzw',
           type: 'textarea',
           props: {
             label: '宝贵之物',
@@ -895,7 +903,7 @@ export class CardToolEditComponent implements OnInit {
           },
         },
         {
-          key: 'feature',
+          key: 'tedian',
           type: 'textarea',
           props: {
             label: '特点',
@@ -905,7 +913,7 @@ export class CardToolEditComponent implements OnInit {
           },
         },
         {
-          key: 'scar',
+          key: 'bahen',
           type: 'textarea',
           props: {
             label: '伤疤',
@@ -914,7 +922,7 @@ export class CardToolEditComponent implements OnInit {
           },
         },
         {
-          key: 'trauma',
+          key: 'kongju',
           type: 'textarea',
           props: {
             label: '精神创伤',
@@ -923,7 +931,7 @@ export class CardToolEditComponent implements OnInit {
           },
         },
         {
-          key: 'backgroundStory',
+          key: 'story',
           type: 'textarea',
           props: {
             label: '过往经历',
@@ -937,7 +945,7 @@ export class CardToolEditComponent implements OnInit {
     },
   ];
 
-  assetsProps: FormlyFieldConfig[] = [
+  assetsFields: FormlyFieldConfig[] = [
     {
       fieldGroupClassName: 'row',
       fieldGroup: [
@@ -976,12 +984,12 @@ export class CardToolEditComponent implements OnInit {
     },
   ];
 
-  careerProps: FormlyFieldConfig[] = [
+  careerFields: FormlyFieldConfig[] = [
     {
       fieldGroupClassName: 'row',
       fieldGroup: [
         {
-          key: 'experience',
+          key: 'jingli',
           type: 'textarea',
           className: 'col-md-4',
           props: {
@@ -992,7 +1000,7 @@ export class CardToolEditComponent implements OnInit {
           },
         },
         {
-          key: 'partner',
+          key: 'huoban',
           type: 'textarea',
           className: 'col-md-4',
           props: {
@@ -1003,7 +1011,7 @@ export class CardToolEditComponent implements OnInit {
           },
         },
         {
-          key: 'myth',
+          key: 'kesulu',
           type: 'textarea',
           className: 'col-md-4',
           props: {
@@ -1021,7 +1029,7 @@ export class CardToolEditComponent implements OnInit {
 function requiredDynamicMax(max: () => number, cur: () => number): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const v = Number(control.value);
-    const preValue = Number((control as any).preValue ?? 0);
+    const preValue = toNumber(((control as any) ?? 0).preValue);
     if (v > preValue + (max() - cur())) {
       return { max: { max: preValue + (max() - cur()), actual: control.value } };
     }

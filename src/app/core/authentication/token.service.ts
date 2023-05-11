@@ -63,6 +63,10 @@ export class TokenService implements OnDestroy {
     return this.token?.getBearerToken() ?? '';
   }
 
+  getAccessToken(): string {
+    return this.token?.access_token ?? '';
+  }
+
   getRefreshToken(): string | void {
     return this.token?.refresh_token;
   }
@@ -80,7 +84,6 @@ export class TokenService implements OnDestroy {
       const value = Object.assign({ access_token: token.token, token_type: 'Bearer' }, token, {
         exp: dayjs().add(1, 'day'),
       });
-      debugger;
       this.store.set(this.key, filterObject(value));
     }
 

@@ -3,7 +3,7 @@
   <mat-divider></mat-divider>
   <div class="d-flex flex-wrap">
     <file-upload (avatorUrl)="modifyAvatar($event)" class="file-upload"></file-upload>
-    <formly-form [model]="model" [fields]="personInfoFields" [form]="form"
+    <formly-form [model]="model.name" [fields]="personInfoFields" [form]="form"
                  class="padding-top-20 info-fields">
     </formly-form>
   </div>
@@ -15,17 +15,17 @@
     <div class="props-wrap flex-wrap">
       <div class="props-form flex-wrap">
         <div class="base-props-fields">
-          <formly-form [model]="model" [fields]="personBaseFields" [form]="form">
+          <formly-form [model]="model.attribute" [fields]="personBaseFields" [form]="form">
           </formly-form>
         </div>
         <mat-icon class="props-icon">double_arrow</mat-icon>
         <div class="advance-props-fields">
-          <formly-form [model]="model" [fields]="personAdvanceFields" [form]="form">
+          <formly-form [model]="model.attribute" [fields]="personAdvanceFields" [form]="form">
           </formly-form>
         </div>
       </div>
       <button mat-raised-button type="button" (click)="randomProps()">随机属性</button>
-      <div class="p-t-8">总值(除幸运)：{{ propTotal }}</div>
+      <div class="p-t-8">总值(除幸运)：{{ propsTotal }}</div>
     </div>
   </div>
 
@@ -36,19 +36,19 @@
       <div class="col-md-8 d-flex flex-col">
         <div>
           <span class="f-w-600 text-pink-400 max-width-fixed-200">职业技能说明：</span>
-          <span>{{getJobDesc(model.job)}}</span>
+          <span>{{getJobDesc(model.name.jobval)}}</span>
         </div>
         <div>
           <span class="f-w-600 text-pink-400 max-width-fixed-200">信用评级范围：</span>
-          <span>{{getHonesty(model.job)}}</span>
+          <span>{{getHonesty(model.name.jobval)}}</span>
         </div>
-
       </div>
       <div class="col-md-4">
         <div class="d-flex">
           <div class="max-width-fixed-200">
             本职技能点
-            <mat-icon class="tips-icon" [matTooltip]="getJobSkillPoint(model.job)" matTooltipPosition="after">help</mat-icon>:
+            <mat-icon class="tips-icon" [matTooltip]="getJobSkillPoint(model.name.jobval)"
+                      matTooltipPosition="after">help</mat-icon>:
           </div>
           <mtx-progress [value]="(currentJobSkillPoint / totalJobSkillPoint) * 100" class="w-full">
             {{ currentJobSkillPoint }}/{{ totalJobSkillPoint }}
@@ -57,7 +57,8 @@
         <div class="d-flex">
           <span class="max-width-fixed-200">
             兴趣技能点
-            <mat-icon class="tips-icon" matTooltip="智力x2" matTooltipPosition="after">help</mat-icon>:
+            <mat-icon class="tips-icon" matTooltip="智力x2"
+                      matTooltipPosition="after">help</mat-icon>:
           </span>
           <mtx-progress [value]="(currentInterestSkillPoint / totalInterestSkillPoint) * 100"
                         class="w-full">
@@ -66,117 +67,115 @@
         </div>
       </div>
     </div>
-    <form [formGroup]="skillForm">
-      <div *ngFor="let item of skillArray.controls; let i = index;" formArrayName="skill">
-        <div [formGroupName]="i" class="row mat-elevation-z3 m-8 p-16">
-          <div class="col-md-1 text-center f-s-20 d-flex flex-col p-b-4 justify-content-center">
-            {{i+1}}
-          </div>
-          <mat-form-field class="col-md-2 w-full">
-            <mat-label *ngIf="!currentSkills[i].select">预设技能</mat-label>
-            <input *ngIf="!currentSkills[i].select" matInput type="text" value="信用评级"
-                   formControlName="name">
+    <div *ngFor="let item of skillArray.controls; let i = index;" formArrayName="skill">
+      <div [formGroupName]="i" class="row mat-elevation-z3 m-8 p-16">
+        <div class="col-md-1 text-center f-s-20 d-flex flex-col p-b-4 justify-content-center">
+          {{i+1}}
+        </div>
+        <mat-form-field class="col-md-2 w-full">
+          <mat-label *ngIf="!currentSkills[i].select">预设技能</mat-label>
+          <input *ngIf="!currentSkills[i].select" matInput type="text" value="信用评级"
+                 formControlName="name">
 
-            <mat-label *ngIf="currentSkills[i].select">预设技能:
-              {{currentSkills[i].name}}</mat-label>
-            <mat-select *ngIf="currentSkills[i].select"
-                        (selectionChange)="iniChange($event, item, currentSkills[i].selectValue)"
-                        formControlName="name">
-              <mat-option *ngFor="let item1 of jobLimitSkill(currentSkills[i].selectValue)"
-                          [value]="item1.num">{{item1.name}}</mat-option>
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field class="col-md-1 w-full">
-            <mat-label>初始</mat-label>
-            <input matInput type="text" formControlName="ini">
-          </mat-form-field>
-          <mat-form-field class="col-md-2 w-full">
-            <mat-label>成长</mat-label>
-            <input matInput type="text" formControlName="grow">
-            <mat-error *ngIf="item.invalid"> 你也被魅魔吸干了？ </mat-error>
-          </mat-form-field>
-          <mat-form-field class="col-md-2 w-full">
-            <mat-label>本职</mat-label>
-            <input matInput type="text" formControlName="pro">
-            <mat-error *ngIf="item.invalid"> 你也要超越极限吗？</mat-error>
-          </mat-form-field>
-          <mat-form-field class="col-md-2 w-full">
-            <mat-label>兴趣</mat-label>
-            <input matInput type="text" formControlName="interest">
-            <mat-error *ngIf="item.invalid">你的兴趣爱好还真是广泛呢？</mat-error>
-          </mat-form-field>
-          <div class="col-md-2">
-            <div class="d-flex align-items-center rate-border">
-              <div class="w-50 text-center">
-                {{ calcRate(item,1) }}
+          <mat-label *ngIf="currentSkills[i].select">预设技能:
+            {{currentSkills[i].name}}</mat-label>
+          <mat-select *ngIf="currentSkills[i].select"
+                      (selectionChange)="iniChange($event, item, currentSkills[i].selectValue)"
+                      formControlName="name">
+            <mat-option *ngFor="let item1 of jobLimitSkill(currentSkills[i].selectValue)"
+                        [value]="item1.num">{{item1.name}}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field class="col-md-1 w-full">
+          <mat-label>初始</mat-label>
+          <input matInput type="text" formControlName="ini">
+        </mat-form-field>
+        <mat-form-field class="col-md-2 w-full">
+          <mat-label>成长</mat-label>
+          <input matInput type="text" formControlName="grow">
+          <mat-error *ngIf="item.invalid"> 你也被魅魔吸干了？ </mat-error>
+        </mat-form-field>
+        <mat-form-field class="col-md-2 w-full">
+          <mat-label>本职</mat-label>
+          <input matInput type="text" formControlName="pro">
+          <mat-error *ngIf="item.invalid"> 你也要超越极限吗？</mat-error>
+        </mat-form-field>
+        <mat-form-field class="col-md-2 w-full">
+          <mat-label>兴趣</mat-label>
+          <input matInput type="text" formControlName="interest">
+          <mat-error *ngIf="item.invalid">你的兴趣爱好还真是广泛呢？</mat-error>
+        </mat-form-field>
+        <div class="col-md-2">
+          <div class="d-flex align-items-center rate-border">
+            <div class="w-50 text-center">
+              {{ calcRate(item,1) }}
+            </div>
+            <div class="w-50">
+              <div class="text-center" style="border: dashed;border-width: 0 0 1px 1px;">
+                {{ calcRate(item,2) }}
               </div>
-              <div class="w-50">
-                <div class="text-center" style="border: dashed;border-width: 0 0 1px 1px;">
-                  {{ calcRate(item,2) }}
-                </div>
-                <div class="text-center" style="border: dashed;border-width: 0 0 0 1px;">
-                  {{ calcRate(item,5) }}
-                </div>
+              <div class="text-center" style="border: dashed;border-width: 0 0 0 1px;">
+                {{ calcRate(item,5) }}
               </div>
             </div>
           </div>
         </div>
       </div>
-      <div *ngIf="model.job && this.freeSkill.fouroTwo" class="row m-8 p-16">
-        <div class="col-md-1"></div>
-        <div class="col-md-2">
-          <mat-form-field class="w-full">
-            <mat-label>任选社交技能（余{{freeSkill.fouroTwo}}）</mat-label>
-            <mat-select (selectionChange)="addFreeSkill($event, 'fouroTwo')">
-              <mat-option *ngFor="let item1 of chooseSkill('fouroTwo')"
-                          [value]="item1.num">{{item1.name}}</mat-option>
-            </mat-select>
-          </mat-form-field>
-        </div>
+    </div>
+    <div *ngIf="model.job && this.freeSkill.fouroTwo" class="row m-8 p-16">
+      <div class="col-md-1"></div>
+      <div class="col-md-2">
+        <mat-form-field class="w-full">
+          <mat-label>任选社交技能（余{{freeSkill.fouroTwo}}）</mat-label>
+          <mat-select (selectionChange)="addFreeSkill($event, 'fouroTwo')">
+            <mat-option *ngFor="let item1 of chooseSkill('fouroTwo')"
+                        [value]="item1.num">{{item1.name}}</mat-option>
+          </mat-select>
+        </mat-form-field>
       </div>
-      <div *ngIf="model.job && this.freeSkill.fouro" class="row m-8 p-16">
-        <div class="col-md-1"></div>
-        <div class="col-md-2">
-          <mat-form-field class="w-full">
-            <mat-label>任选社交技能（余{{freeSkill.fouro}}）</mat-label>
-            <mat-select (selectionChange)="addFreeSkill($event, 'fouro')">
-              <mat-option *ngFor="let item1 of chooseSkill('fouro')"
-                          [value]="item1.num">{{item1.name}}</mat-option>
-            </mat-select>
-          </mat-form-field>
-        </div>
+    </div>
+    <div *ngIf="model.job && this.freeSkill.fouro" class="row m-8 p-16">
+      <div class="col-md-1"></div>
+      <div class="col-md-2">
+        <mat-form-field class="w-full">
+          <mat-label>任选社交技能（余{{freeSkill.fouro}}）</mat-label>
+          <mat-select (selectionChange)="addFreeSkill($event, 'fouro')">
+            <mat-option *ngFor="let item1 of chooseSkill('fouro')"
+                        [value]="item1.num">{{item1.name}}</mat-option>
+          </mat-select>
+        </mat-form-field>
       </div>
-      <div *ngIf="model.job && this.freeSkill.two" class="row m-8 p-16">
-        <div class="col-md-1"></div>
-        <div class="col-md-2">
-          <mat-form-field class="w-full">
-            <mat-label>任选互斥技能（余{{freeSkill.two}}）</mat-label>
-            <mat-select (selectionChange)="addFreeSkill($event, 'two')">
-              <mat-option *ngFor="let item1 of chooseSkill('two')"
-                          [value]="item1.num">{{item1.name}}</mat-option>
-            </mat-select>
-          </mat-form-field>
-        </div>
+    </div>
+    <div *ngIf="model.job && this.freeSkill.two" class="row m-8 p-16">
+      <div class="col-md-1"></div>
+      <div class="col-md-2">
+        <mat-form-field class="w-full">
+          <mat-label>任选互斥技能（余{{freeSkill.two}}）</mat-label>
+          <mat-select (selectionChange)="addFreeSkill($event, 'two')">
+            <mat-option *ngFor="let item1 of chooseSkill('two')"
+                        [value]="item1.num">{{item1.name}}</mat-option>
+          </mat-select>
+        </mat-form-field>
       </div>
-      <div *ngIf="model.job && this.freeSkill.all" class="row m-8 p-16">
-        <div class="col-md-1"></div>
-        <div class="col-md-2">
-          <mat-form-field class="w-full">
-            <mat-label>任选技能（余{{freeSkill.all}}）</mat-label>
-            <mat-select (selectionChange)="addFreeSkill($event, 'all')">
-              <mat-option *ngFor="let item1 of chooseSkill('all')"
-                          [value]="item1.num">{{item1.name}}</mat-option>
-            </mat-select>
-          </mat-form-field>
-        </div>
+    </div>
+    <div *ngIf="model.job && this.freeSkill.all" class="row m-8 p-16">
+      <div class="col-md-1"></div>
+      <div class="col-md-2">
+        <mat-form-field class="w-full">
+          <mat-label>任选技能（余{{freeSkill.all}}）</mat-label>
+          <mat-select (selectionChange)="addFreeSkill($event, 'all')">
+            <mat-option *ngFor="let item1 of chooseSkill('all')"
+                        [value]="item1.num">{{item1.name}}</mat-option>
+          </mat-select>
+        </mat-form-field>
       </div>
-      <div class="row m-8 p-16">
-        <div class="col-md-1"></div>
-        <div class="col-md-2">
-          <!-- <button mat-raised-button type="button">添加自定义技能</button> -->
-        </div>
+    </div>
+    <div class="row m-8 p-16">
+      <div class="col-md-1"></div>
+      <div class="col-md-2">
+        <!-- <button mat-raised-button type="button">添加自定义技能</button> -->
       </div>
-    </form>
+    </div>
   </div>
 
   <h3>武器</h3>
@@ -244,16 +243,14 @@
   <h3>携带物品</h3>
   <mat-divider></mat-divider>
   <div class="w-full h-full d-flex flex-col">
-    <form [formGroup]="itemForm">
-      <mat-form-field *ngFor="let item of itemArray.controls; let i = index;"
-                      formArrayName="item" class="w-full mat-elevation-z3 m-t-8 m-b-8 p-16">
-        <mat-label>物品</mat-label>
-        <input matInput #message maxlength="100" placeholder="随身携带的物品"
-               [formControl]="convert(item)">
-        <mat-hint align="start"><strong>尽量不要超过15字哦</strong> </mat-hint>
-        <mat-hint align="end">{{message.value.length}} / 15</mat-hint>
-      </mat-form-field>
-    </form>
+    <mat-form-field *ngFor="let item of itemArray.controls; let i = index;"
+                    formArrayName="things" class="w-full mat-elevation-z3 m-t-8 m-b-8 p-16">
+      <mat-label>物品</mat-label>
+      <input matInput #message maxlength="100" placeholder="随身携带的物品"
+             [formControl]="convert(item)">
+      <mat-hint align="start"><strong>尽量不要超过15字哦</strong> </mat-hint>
+      <mat-hint align="end">{{message.value.length}} / 15</mat-hint>
+    </mat-form-field>
     <button mat-raised-button type="button" (click)="addItem()">
       <mat-icon>add</mat-icon>
     </button>
@@ -262,7 +259,7 @@
   <h3>故事背景</h3>
   <mat-divider></mat-divider>
   <div class="p-x-24 p-y-8">
-    <formly-form [model]="model" [fields]="storyProps" [form]="form">
+    <formly-form [model]="model.story" [fields]="storyFields" [form]="form">
     </formly-form>
   </div>
 
@@ -277,18 +274,16 @@
         生活水平：{{live()}}
       </div>
     </div>
-    <formly-form [model]="model" [fields]="assetsProps" [form]="form">
+    <formly-form [model]="model" [fields]="assetsFields" [form]="form">
     </formly-form>
   </div>
 
   <h3>生涯</h3>
   <mat-divider></mat-divider>
   <div class="p-x-24 p-y-8">
-    <formly-form [model]="model" [fields]="careerProps" [form]="form" class="p-24">
+    <formly-form [model]="model.more" [fields]="careerFields" [form]="form" class="p-24">
     </formly-form>
   </div>
 
-  <!-- [disabled]="!form.valid" -->
-  <button mat-raised-button color="primary">Submit</button>
-
+  <button mat-raised-button color="primary" [disabled]="!form.valid">Submit</button>
 </form>
