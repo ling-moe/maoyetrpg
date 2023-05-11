@@ -23,6 +23,6 @@ export class CardToolService {
 // rg: coc7
 
   createRoleCard(roleCard: RoleCard): Observable<any>{
-    return this.http.post('/api/rolecard/info', roleCard, {params: {userid: roleCard.userid, token: this.tokenService.getAccessToken(), name: 'rolecard', rg: 'coc7'}, withCredentials: false});
+    return this.http.post('/api/rolecard/info', roleCard, {params: {userid: roleCard.userid, token: this.tokenService.getAccessToken(), name: 'rolecard', rg: 'coc7'}});
   }
 }

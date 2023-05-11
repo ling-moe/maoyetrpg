@@ -37,8 +37,9 @@ export class TokenInterceptor implements HttpInterceptor {
       return next
         .handle(
           request.clone({
-            headers: request.headers.append('Authorization', this.tokenService.getBearerToken()),
-            withCredentials: true,
+            // TODO 会引发跨域问题，目前不允许authorization和cookie同源跨域
+            // headers: request.headers.append('Authorization', this.tokenService.getBearerToken()),
+            // withCredentials: true,
           })
         )
         .pipe(

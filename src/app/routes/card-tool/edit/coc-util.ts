@@ -50,20 +50,20 @@ export function calcCashLevel(assets: number){
     return {cash, level};
 }
 
-export function calcHitAddAndPhysique(str: number, siz: number) {
+export function calcDbAndBuild(str: number, siz: number) {
   const t = str + siz;
   if (t >= 2 && t <= 64) {
-    return { hitAdd: '-2', physique: -2 };
+    return { db: '-2', build: -2 };
   } else if (t >= 65 && t <= 84) {
-    return { hitAdd: '-1', physique: -1 };
+    return { db: '-1', build: -1 };
   } else if (t >= 85 && t <= 124) {
-    return { hitAdd: '无', physique: 0 };
+    return { db: '无', build: 0 };
   } else if (t >= 125 && t <= 164) {
-    return { hitAdd: '+1D4', physique: 1 };
+    return { db: '+1D4', build: 1 };
   } else if (t >= 165 && t <= 204) {
-    return { hitAdd: '+1D6', physique: 2 };
+    return { db: '+1D6', build: 2 };
   } else {
-    return { hitAdd: '无', physique: 0 };
+    return { db: '无', build: 0 };
   }
 }
 
@@ -105,4 +105,13 @@ export function liveLevel(assets: number){
   } else {
     return '富豪';
   }
+}
+
+
+export function calcMP(pow: number){
+  return Math.round(pow / 5);
+}
+
+export function calcSan(pow: number){
+  return pow;
 }

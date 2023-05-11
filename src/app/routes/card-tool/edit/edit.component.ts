@@ -35,8 +35,10 @@ import {
 } from './types';
 import {
   calcCashLevel,
-  calcHitAddAndPhysique,
+  calcDbAndBuild,
   calcMov,
+  calcMP,
+  calcSan,
   liveLevel,
   Time,
   WeaponCategory,
@@ -392,7 +394,7 @@ export class CardToolEditComponent implements OnInit {
   currentInterestSkillPoint = 0;
 
   get totalJobSkillPoint(): number {
-    if (!this.model.job) {
+    if (!this.model.job.value) {
       return 0;
     }
     const job = this.jobs[+this.model.name.jobval];
@@ -599,7 +601,7 @@ export class CardToolEditComponent implements OnInit {
                       toNumber(this.model.attribute.siz ?? 0),
                       toNumber(this.model.attribute.age ?? 0)
                     ),
-                    ...calcHitAddAndPhysique(
+                    ...calcDbAndBuild(
                       toNumber(this.model.attribute.str ?? 0),
                       toNumber(this.model.attribute.siz ?? 0)
                     ),
@@ -659,7 +661,7 @@ export class CardToolEditComponent implements OnInit {
                       toNumber(this.model.attribute.siz ?? 0),
                       toNumber(this.model.attribute.age ?? 0)
                     ),
-                    ...calcHitAddAndPhysique(
+                    ...calcDbAndBuild(
                       toNumber(this.model.attribute.str ?? 0),
                       toNumber(this.model.attribute.siz ?? 0)
                     ),
@@ -724,10 +726,10 @@ export class CardToolEditComponent implements OnInit {
               field.options?.fieldChanges
                 ?.pipe(filter(e => e.field === field && e.value !== null))
                 .subscribe(e => {
-                  const t = Math.round(toNumber(e.value ?? 0) / 5);
+                  const t = calcMP(toNumber(e.value ?? 0));
                   this.form.patchValue({
                     mp: `${t}/${t}`,
-                    san: `${toNumber(e.value ?? 0)}/99`,
+                    san: `${calcSan(toNumber(e.value ?? 0))}/99`,
                   });
                 });
             },
@@ -851,10 +853,12 @@ export class CardToolEditComponent implements OnInit {
 
   storyFields: FormlyFieldConfig[] = [
     {
+      fieldGroupClassName: 'row',
       fieldGroup: [
         {
           key: 'miaoshu',
           type: 'textarea',
+          className: 'col-md-6',
           props: {
             label: '外貌',
             placeholder: '你长的是什么样子呢',
@@ -865,6 +869,7 @@ export class CardToolEditComponent implements OnInit {
         {
           key: 'xinnian',
           type: 'textarea',
+          className: 'col-md-6',
           props: {
             label: '思想',
             placeholder: '信奉的某位神祇，某些思想，某些信念',
@@ -875,6 +880,7 @@ export class CardToolEditComponent implements OnInit {
         {
           key: 'zyzr',
           type: 'textarea',
+          className: 'col-md-6',
           props: {
             label: '重要之人',
             placeholder: '家人，爱人，朋友，亦或敌人',
@@ -885,6 +891,7 @@ export class CardToolEditComponent implements OnInit {
         {
           key: 'feifanzd',
           type: 'textarea',
+          className: 'col-md-6',
           props: {
             label: '意义非凡之地',
             placeholder: '是了解秘辛的人生转折点，还是与重要之人约定相守之处？',
@@ -895,6 +902,7 @@ export class CardToolEditComponent implements OnInit {
         {
           key: 'bgzw',
           type: 'textarea',
+          className: 'col-md-6',
           props: {
             label: '宝贵之物',
             placeholder: '伙计听说你有一个刻着带翼猎犬的护身符？',
@@ -905,6 +913,7 @@ export class CardToolEditComponent implements OnInit {
         {
           key: 'tedian',
           type: 'textarea',
+          className: 'col-md-6',
           props: {
             label: '特点',
             placeholder: '嘿你的特点不会只有你的外貌吧',
@@ -915,6 +924,7 @@ export class CardToolEditComponent implements OnInit {
         {
           key: 'bahen',
           type: 'textarea',
+          className: 'col-md-6',
           props: {
             label: '伤疤',
             placeholder: '有人把伤疤比作勋章，你怎么认为？',
@@ -924,6 +934,7 @@ export class CardToolEditComponent implements OnInit {
         {
           key: 'kongju',
           type: 'textarea',
+          className: 'col-md-6',
           props: {
             label: '精神创伤',
             placeholder: '你可能有恐惧症或狂躁症，这里要求出示医生的诊断证书',
@@ -933,6 +944,7 @@ export class CardToolEditComponent implements OnInit {
         {
           key: 'story',
           type: 'textarea',
+          className: 'col-md-12',
           props: {
             label: '过往经历',
             placeholder:

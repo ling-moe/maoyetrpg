@@ -191,7 +191,7 @@
         </mat-optgroup>
       </mat-select>
     </mat-form-field>
-    <mat-table [dataSource]="model.weapons" class="fixed-table mat-elevation-z8">
+    <mat-table [dataSource]="currentWeapons" class="fixed-table mat-elevation-z8">
       <ng-container matColumnDef="name" sticky="true">
         <mat-header-cell *matHeaderCellDef> 武器名称 </mat-header-cell>
         <mat-cell *matCellDef="let element"> {{element.name}} </mat-cell>
