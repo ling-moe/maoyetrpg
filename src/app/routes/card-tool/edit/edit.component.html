@@ -56,7 +56,7 @@
           <div class="max-width-fixed-200">
             本职技能点
             <mat-icon class="tips-icon" [matTooltip]="getJobSkillPoint(model?.person?.jobval)"
-                      matTooltipPosition="after">help</form>:
+                      matTooltipPosition="after">help</mat-icon>:
           </div>
           <mtx-progress [value]="(currentJobSkillPoint / totalJobSkillPoint) * 100" class="w-full">
             {{ currentJobSkillPoint }}/{{ totalJobSkillPoint }}
@@ -66,7 +66,7 @@
           <span class="max-width-fixed-200">
             兴趣技能点
             <mat-icon class="tips-icon" matTooltip="智力x2"
-                      matTooltipPosition="after">help</form>:
+                      matTooltipPosition="after">help</mat-icon>:
           </span>
           <mtx-progress [value]="(currentInterestSkillPoint / totalInterestSkillPoint) * 100"
                         class="w-full">
