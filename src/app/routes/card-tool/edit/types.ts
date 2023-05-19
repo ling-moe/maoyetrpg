@@ -1,5 +1,10 @@
 import { FormControl } from '@angular/forms';
 
+export interface PageRequest{
+  page: number;
+  nextpage: number;
+  pagesize: number;
+}
 export interface SkillControl {
   num: FormControl<number | null>;
   name: FormControl<string | null>;
@@ -8,6 +13,7 @@ export interface SkillControl {
   pro: FormControl<number | null>;
   interest: FormControl<number | null>;
   isFree: FormControl<boolean | null>;
+  bz: FormControl<boolean | null>;
 }
 export interface WeaponsGroup{
   category: string;
@@ -51,7 +57,7 @@ export interface ProFormula {
 }
 
 export interface Skill {
-  bz:          number;
+  bz:          boolean;
   grow:        string;
   ini:         string;
   interest:    string;
@@ -230,13 +236,13 @@ export enum Time {
 }
 
 export interface RoleCard {
+  chartid?:   string;
   job:       RoleJob;
   hp:        StatusBar;
   mp:        StatusBar;
   san:       StatusBar;
   attribute: { [key: string]: string };
   bz:        BzElement[];
-  elsesk:    any[];
   jobwt:     number[];
   health:    string;
   mind:      string;

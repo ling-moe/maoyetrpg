@@ -16,6 +16,7 @@
 @use 'cursor';
 @use 'image';
 @use 'icon';
+@use 'flexbox';
 
 // Generate Helpers
 @each $key, $utility in $utilities {

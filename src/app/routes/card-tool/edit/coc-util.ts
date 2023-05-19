@@ -1,3 +1,5 @@
+import { toNumber } from 'lodash';
+import { BzElement, CocConfig, RoleCard } from './types';
 export const WeaponCategory: {[key: string]: string} = {
   cg: '常规武器',
   sq: '手枪',
@@ -114,4 +116,36 @@ export function calcMP(pow: number){
 
 export function calcSan(pow: number){
   return pow;
+}
+
+export function modelToRoleCard(model: any, config: CocConfig): RoleCard{
+  const roleCard: any = model;
+  const { str, con, pow, dex, app, siz, int, edu, hp, mp, san } = roleCard.attribute;
+  roleCard.attribute.all = 0 + str + con + pow + dex + app + siz + int + edu;
+  const hpGroup = hp.split('/');
+  const mpGroup = mp.split('/');
+  const sanGroup = san.split('/');
+  roleCard.hp = { have: toNumber(hpGroup[0] ?? 0), total: toNumber(hpGroup[0] ?? 1) };
+  roleCard.mp = { have: toNumber(mpGroup[0] ?? 0), total: toNumber(mpGroup[0] ?? 1) };
+  roleCard.san = { have: toNumber(sanGroup[0] ?? 0), total: toNumber(sanGroup[0] ?? 1) };
+  roleCard.health = roleCard.attribute.health;
+  roleCard.mind = roleCard.attribute.mind;
+  roleCard.job.value = `${roleCard.name.jobval}`;
+  roleCard.jobwt = [+str, +con, +pow, +dex, +app, +siz, +int, +edu];
+  roleCard.money = [`${roleCard.assets.credit}%`, roleCard.assets.live, roleCard.assets.cash, roleCard.assets.level, roleCard.assets.assetsDesc];
+  return roleCard as RoleCard;
+}
+
+export function roleCardToModel(roleCard: RoleCard): any{
+  const model: any = roleCard;
+  model.job.value = roleCard.job.value;
+  delete model.hp;
+  delete model.mp;
+  delete model.san;
+  delete model._id;
+  model.cash = roleCard.money[2];
+  model.level = roleCard.money[3];
+  delete model.money;
+  return model;
+
 }

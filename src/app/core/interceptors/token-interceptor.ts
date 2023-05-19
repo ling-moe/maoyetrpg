@@ -4,6 +4,7 @@ import {
   HttpEvent,
   HttpHandler,
   HttpInterceptor,
+  HttpParams,
   HttpRequest,
 } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -40,7 +41,11 @@ export class TokenInterceptor implements HttpInterceptor {
             // TODO 会引发跨域问题，目前不允许authorization和cookie同源跨域
             // headers: request.headers.append('Authorization', this.tokenService.getBearerToken()),
             // withCredentials: true,
-          })
+            setParams: {
+              userid: this.tokenService.simpleUser().userid!.toString(),
+              token: this.tokenService.getAccessToken(),
+            },
+          }),
         )
         .pipe(
           catchError((error: HttpErrorResponse) => {

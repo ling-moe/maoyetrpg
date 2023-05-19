@@ -34,6 +34,7 @@ export class DefaultInterceptor implements HttpInterceptor {
         }
         return throwError([]);
       }
+      return of(event.clone({body: body.data}));
     }
     // Pass down event if everything is OK
     return of(event);

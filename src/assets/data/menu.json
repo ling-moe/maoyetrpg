@@ -1,7 +1,7 @@
 {
   "menu": [
     {
-      "route": "CardTool",
+      "route": "card-tool",
       "name": "CardTool",
       "type": "link",
       "icon": "dashboard"

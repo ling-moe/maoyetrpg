@@ -13,7 +13,7 @@ export class LoginService {
 
   login(username: string, password: string) {
 
-    return this.http.post<Result<Token>>('/api/user/login', { email: username, pswmd5: MD5(password).toString(), timestamp: Date.now(), device_type: 1 });
+    return this.http.post<Token>('/api/user/login', { email: username, pswmd5: MD5(password).toString(), timestamp: Date.now(), device_type: 1 });
   }
 
   refresh(params: Record<string, any>) {

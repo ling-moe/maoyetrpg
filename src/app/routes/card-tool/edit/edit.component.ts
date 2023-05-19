@@ -9,11 +9,11 @@ import {
   FormArray,
   ValidationErrors,
 } from '@angular/forms';
-import { User, AuthService } from '@core';
+import { User, TokenService } from '@core';
 import { FormlyFieldConfig, FormlyFormOptions } from '@ngx-formly/core';
-import { map, filter, pairwise, startWith } from 'rxjs/operators';
+import { map, filter, pairwise, startWith, switchMap } from 'rxjs/operators';
 import { CardToolService } from '../card-tool.service';
-import { shuffle, toNumber, zipObject } from 'lodash';
+import { maxBy, shuffle, toNumber, zipObject } from 'lodash';
 import { MatSelectChange } from '@angular/material/select';
 import {
   Bz,
@@ -40,11 +40,13 @@ import {
   calcMP,
   calcSan,
   liveLevel,
+  roleCardToModel,
   Time,
   WeaponCategory,
 } from './coc-util';
 import { EChartsType } from 'echarts/core';
 import { echarts } from './echart.config';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-card-tool-Edit',
@@ -87,14 +89,13 @@ export class CardToolEditComponent implements OnInit {
     mp: new FormControl(''),
     san: new FormControl(''),
   });
-  model: RoleCard = {
+  model: any = {
     job: <RoleJob>{},
     hp: <StatusBar>{},
     mp: <StatusBar>{},
     san: <StatusBar>{},
     attribute: {},
     bz: [],
-    elsesk: [],
     jobwt: [],
     health: '',
     mind: '',
@@ -107,6 +108,7 @@ export class CardToolEditComponent implements OnInit {
     userid: 0,
     weapons: [],
     zdy: [],
+    person: {},
   };
 
   skillArray = this.form.get('skill') as FormArray<FormGroup<SkillControl>>;
@@ -115,19 +117,40 @@ export class CardToolEditComponent implements OnInit {
   skills: Skill[] = [];
 
   constructor(
-    private auth: AuthService,
+    private token: TokenService,
     private cardToolService: CardToolService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private activatedRoute: ActivatedRoute
   ) {}
 
   ngOnInit() {
-    this.auth.user().subscribe(user => {
-      this.user = user;
-      this.personInfoFields = this.createPersonInfoFields();
-    });
+    this.initForm();
+    // this.initData();
+  }
+  options: FormlyFormOptions = {};
+  initData() {
+    this.activatedRoute.params
+      .pipe(
+        filter(params => params.chartid),
+        map(params => params.chartid as string),
+        switchMap(chartId => this.cardToolService.detailRoleCard(chartId))
+      )
+      .subscribe(roleCard => {
+        this.options.updateInitialValue?.(roleCardToModel(roleCard));
+        this.options.resetModel?.();
+      });
+  }
+  t(i: any){
+    console.log(i);
+    return true;
+  }
+
+  private initForm() {
+    this.user = this.token.simpleUser();
+    this.personInfoFields[0].fieldGroup![2].defaultValue = this.user.name;
     this.cardToolService.getJobAndSkill().subscribe(cocConfig => {
       this.jobs = cocConfig.job;
-      this.skills = cocConfig.skills;
+      this.skills = cocConfig.skills.sort((a, b) => a.num - b.num);
       this.skselects = cocConfig.skselect[0];
       this.weapons = Object.keys(cocConfig.weapons).map(key => ({
         category: WeaponCategory[key],
@@ -187,13 +210,13 @@ export class CardToolEditComponent implements OnInit {
 
   addFreeSkill(v: MatSelectChange, chooseType: FreeSkillNum) {
     this.freeSkill[chooseType]! -= 1;
-    this.currentSkills.push(this.skills[v.value]);
-    this.skillArray.push(this.initSkillLine(this.skills[v.value], true));
+    this.skills[v.value].bz=true;
+    this.skillArray.at(v.value).patchValue({bz: true, isFree: true});
   }
 
   jobLimitSkill(type: SkselectKey) {
     const skill = this.skselects[type][0].all;
-    const limitSkill = this.skselects[type][0][this.jobs[+this.model.name.jobval].job];
+    const limitSkill = this.skselects[type][0][this.jobs[+this.model?.person?.jobval].job];
     if (limitSkill) {
       return limitSkill.map(num => skill[num.num]);
     }
@@ -204,7 +227,7 @@ export class CardToolEditComponent implements OnInit {
     if (chooseType === 'all') {
       return this.skills;
     }
-    const options = this.jobs[+this.model.name.jobval][chooseType];
+    const options = this.jobs[+this.model?.person?.jobval][chooseType];
     if (chooseType === 'two') {
       return (options[0] as number[]).map(option => this.skills[option]);
     }
@@ -213,6 +236,15 @@ export class CardToolEditComponent implements OnInit {
 
   addWeapon(e: MatSelectChange) {
     this.currentWeapons = [...this.currentWeapons, e.value];
+  }
+
+  listJobSkills(){
+    console.log(this.skillArray.controls.filter(skill => skill.value.bz));
+    return this.skillArray.controls.filter(skill => skill.value.bz);
+  }
+
+  listInterestSkills(){
+    return this.skillArray.controls.filter(skill => !skill.value.bz);
   }
 
   initSkillLine(skill: Skill, isFree: boolean): FormGroup<SkillControl> {
@@ -242,6 +274,7 @@ export class CardToolEditComponent implements OnInit {
         ],
       ],
       isFree: [isFree],
+      bz: [skill.bz],
     });
     formGroup.controls.pro.valueChanges
       .pipe(startWith(null), pairwise())
@@ -261,35 +294,14 @@ export class CardToolEditComponent implements OnInit {
   }
 
   submit() {
-    const { str, con, pow, dex, app, siz, int, edu, hp, mp, san } = this.model.attribute;
     const { cash, level, assetsDesc } = this.form.value;
-    this.model.attribute.all = 0 + str + con + pow + dex + app + siz + int + edu;
-    const hpGroup = hp.split('/');
-    const mpGroup = mp.split('/');
-    const sanGroup = san.split('/');
-    this.model.hp = { have: toNumber(hpGroup[0] ?? 0), total: toNumber(hpGroup[0] ?? 1) };
-    this.model.mp = { have: toNumber(mpGroup[0] ?? 0), total: toNumber(mpGroup[0] ?? 1) };
-    this.model.san = { have: toNumber(sanGroup[0] ?? 0), total: toNumber(sanGroup[0] ?? 1) };
-    this.model.health = this.model.attribute.health;
-    this.model.mind = this.model.attribute.mind;
-    this.model.job.value = `${this.model.name.jobval}`;
-    // TODO 这的技能缺少值
-    this.model.bz = this.form
-      .get('skill')!
-      .value.map(skill => ({ ...skill, bz: true } as unknown as BzElement));
-    this.model.job.all = this.form
-      .get('skill')!
-      .value.filter(skill => skill.isFree)
-      .map(skill => ({ ...skill, bz: true } as unknown as Bz));
-    this.model.jobwt = [+str, +con, +pow, +dex, +app, +siz, +int, +edu];
-    this.model.money = [`${this.credit()}%`, this.live()!, cash!, level!, assetsDesc!];
+    this.model.assets = { credit: this.credit(), live: this.live(), cash, level, assetsDesc };
     this.model.things = this.form.get('things')?.value as string[];
     this.model.weapons = this.currentWeapons.map(weapon => weapon.value);
-    this.model.userid = this.user.userid!;
-    console.log(this.model);
-    this.cardToolService.createRoleCard(this.model).subscribe(res => {
-      console.log(res);
-    });
+    // console.log(this.model);
+    // this.cardToolService.createRoleCard(this.model).subscribe(res => {
+    //   console.log(res);
+    // });
   }
 
   calcRate(item: FormGroup<SkillControl>, sub: number) {
@@ -310,7 +322,7 @@ export class CardToolEditComponent implements OnInit {
   }
 
   modifyAvatar(avatorUrl: string) {
-    this.model.name.touxiang = avatorUrl;
+    this.model.person.touxiang = avatorUrl;
   }
 
   getJobDesc(index: string): string {
@@ -394,171 +406,159 @@ export class CardToolEditComponent implements OnInit {
   currentInterestSkillPoint = 0;
 
   get totalJobSkillPoint(): number {
-    if (!this.model.job.value) {
+    if (!this.model?.person?.jobval) {
       return 0;
     }
-    const job = this.jobs[+this.model.name.jobval];
+    const job = this.jobs[+this.model.person.jobval];
     const formula = job?.pro;
-    return formula?.reduce(
-      // TODO 存在这种情况 需要询问后解决
-      // [
-      //   [{ "name": "edu", "num": 2 }],
-      //   [
-      //     { "name": "str", "num": 2 },
-      //     { "name": "dex", "num": 2 }
-      //   ]
-      // ]
-      (total, item) => total + toNumber(this.model.attribute[item[0].name] ?? 0) * item[0].num,
-      0
-    );
+    return formula?.reduce((total, item) => {
+      const maxItem = maxBy(item, i => toNumber(this.model.attribute[i.name] ?? 0));
+      return total + toNumber(this.model.attribute[maxItem!.name] ?? 0) * maxItem!.num;
+    }, 0);
   }
 
   get totalInterestSkillPoint(): number {
     return toNumber(this.model.attribute.int ?? 0) * 2;
   }
 
-  personInfoFields!: FormlyFieldConfig[];
-  createPersonInfoFields(){
-    return [
-      {
-        fieldGroupClassName: 'row',
-        fieldGroup: [
-          {
-            className: 'col-md-6',
-            key: 'chartname',
-            type: 'input',
-            props: {
-              label: '姓名',
-              placeholder: '你叫什么名字？',
-              required: true,
-            },
+  personInfoFields: FormlyFieldConfig[] = [
+    {
+      fieldGroupClassName: 'row',
+      fieldGroup: [
+        {
+          className: 'col-md-6',
+          key: 'chartname',
+          type: 'input',
+          props: {
+            label: '姓名',
+            placeholder: '你叫什么名字？',
+            required: true,
           },
-          {
-            className: 'col-md-6',
-            key: 'sex',
-            type: 'input',
-            props: {
-              label: '性别',
-              placeholder: '虽然正常来说只有男或女，可是也保不准有武装直升机？',
-              required: true,
-            },
+        },
+        {
+          className: 'col-md-6',
+          key: 'sex',
+          type: 'input',
+          props: {
+            label: '性别',
+            placeholder: '虽然正常来说只有男或女，可是也保不准有武装直升机？',
+            required: true,
           },
+        },
 
-          {
-            className: 'col-md-6',
-            key: 'player',
-            type: 'input',
-            props: {
-              label: '玩家',
-              placeholder: '本尊在此',
-              required: true,
-            },
-            defaultValue: this.user?.name
+        {
+          className: 'col-md-6',
+          key: 'player',
+          type: 'input',
+          props: {
+            label: '玩家',
+            placeholder: '本尊在此',
+            required: true,
           },
-          {
-            className: 'col-md-6',
-            key: 'ages',
-            type: 'input',
-            props: {
-              label: '年龄',
-              placeholder: '您贵庚？',
-              required: true,
-            },
-            hooks: {
-              onChanges: (field: FormlyFieldConfig) => {
-                field.options?.fieldChanges
-                  ?.pipe(filter(e => e.field === field && e.value !== null))
-                  .subscribe(e => {
-                    this.form.patchValue({
-                      mov: calcMov(
-                        toNumber(this.model.attribute.str ?? 0),
-                        toNumber(this.model.attribute.dex ?? 0),
-                        toNumber(this.model.attribute.siz ?? 0),
-                        toNumber(this.model.attribute.age ?? 0)
-                      ),
-                    });
+          defaultValue: this.user?.name,
+        },
+        {
+          className: 'col-md-6',
+          key: 'ages',
+          type: 'input',
+          props: {
+            label: '年龄',
+            placeholder: '您贵庚？',
+            required: true,
+          },
+          hooks: {
+            onChanges: (field: FormlyFieldConfig) => {
+              field.options?.fieldChanges
+                ?.pipe(filter(e => e.field === field && e.value !== null))
+                .subscribe(e => {
+                  this.form.patchValue({
+                    mov: calcMov(
+                      toNumber(this.model.attribute.str ?? 0),
+                      toNumber(this.model.attribute.dex ?? 0),
+                      toNumber(this.model.attribute.siz ?? 0),
+                      toNumber(this.model.attribute.age ?? 0)
+                    ),
                   });
-              },
+                });
             },
           },
-          {
-            className: 'col-md-6',
-            key: 'jobval',
-            type: 'select',
-            props: {
-              label: '职业',
-              placeholder: '师傅你是做什么工作的？',
-              required: true,
-              options: this.cardToolService
-                .getJobAndSkill()
-                .pipe(map(res => res.job.map(job => ({ value: job.value, label: job.job })))),
-            },
-            hooks: {
-              onChanges: (field: FormlyFieldConfig) => {
-                field.options?.fieldChanges
-                  ?.pipe(filter(e => e.field === field && e.value !== null))
-                  .subscribe(e => {
-                    const curJob = this.jobs[e.value];
-                    this.skillArray.clear();
-                    this.freeSkill = {};
-                    this.currentSkills = (curJob.skills as number[])
-                      .map(skillNum => this.skills[skillNum])
-                      .sort((a, b) => a.num - b.num);
-                    // 记录剩余可选技能数量
-                    if (curJob.fouroTwo.length !== 0) {
-                      this.freeSkill.fouroTwo = 2;
-                    }
-                    if (curJob.fouro.length !== 0) {
-                      this.freeSkill.fouro = 1;
-                    }
-                    if (curJob.two.length !== 0) {
-                      this.freeSkill.two = 1;
-                    }
-                    if (curJob.all !== 0) {
-                      this.freeSkill.all = curJob.all;
-                    }
-                    this.currentSkills
-                      .map(skill => this.initSkillLine(skill, false))
-                      .forEach(skill => this.skillArray.push(skill));
-                  });
-              },
+        },
+        {
+          className: 'col-md-6',
+          key: 'jobval',
+          type: 'select',
+          props: {
+            label: '职业',
+            placeholder: '师傅你是做什么工作的？',
+            required: true,
+            options: this.cardToolService
+              .getJobAndSkill()
+              .pipe(map(res => res.job.map(job => ({ value: job.value, label: job.job })))),
+          },
+          hooks: {
+            onChanges: (field: FormlyFieldConfig) => {
+              field.options?.fieldChanges
+                ?.pipe(filter(e => e.field === field && e.value !== null))
+                .subscribe(e => {
+                  const curJob = this.jobs[e.value];
+                  this.skillArray.clear();
+                  this.freeSkill = {};
+                  curJob.skills
+                    .forEach(skillNum => this.skills[skillNum].bz = true);
+                  // 记录剩余可选技能数量
+                  if (curJob.fouroTwo.length !== 0) {
+                    this.freeSkill.fouroTwo = 2;
+                  }
+                  if (curJob.fouro.length !== 0) {
+                    this.freeSkill.fouro = 1;
+                  }
+                  if (curJob.two.length !== 0) {
+                    this.freeSkill.two = 1;
+                  }
+                  if (curJob.all !== 0) {
+                    this.freeSkill.all = curJob.all;
+                  }
+                  this.skills
+                    .map(skill => this.initSkillLine(skill, false))
+                    .forEach(skill => this.skillArray.push(skill));
+                });
             },
           },
-          {
-            className: 'col-md-6',
-            key: 'address',
-            type: 'input',
-            props: {
-              label: '住地',
-              placeholder: '你现在住哪?',
-              required: true,
-            },
+        },
+        {
+          className: 'col-md-6',
+          key: 'address',
+          type: 'input',
+          props: {
+            label: '住地',
+            placeholder: '你现在住哪?',
+            required: true,
           },
-          {
-            className: 'col-md-6',
-            key: 'time',
-            type: 'select',
-            props: {
-              label: '时代',
-              placeholder: '你是哪个时代的人啊',
-              required: true,
-              options: Time,
-            },
+        },
+        {
+          className: 'col-md-6',
+          key: 'time',
+          type: 'select',
+          props: {
+            label: '时代',
+            placeholder: '你是哪个时代的人啊',
+            required: true,
+            options: Time,
           },
-          {
-            className: 'col-md-6',
-            key: 'hometown',
-            type: 'input',
-            props: {
-              label: '故乡',
-              placeholder: '是M18星云吗？',
-              required: true,
-            },
+        },
+        {
+          className: 'col-md-6',
+          key: 'hometown',
+          type: 'input',
+          props: {
+            label: '故乡',
+            placeholder: '是M18星云吗？',
+            required: true,
           },
-        ],
-      },
-    ];
-  }
+        },
+      ],
+    },
+  ];
 
   personBaseFields: FormlyFieldConfig[] = [
     {

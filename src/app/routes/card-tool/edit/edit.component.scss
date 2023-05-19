@@ -25,9 +25,6 @@
 .padding-top-20{
   padding: 20px;
 }
-.flex-wrap{
-  flex-wrap: wrap;
-}
 
 .file-upload{
   width: 30%;
@@ -66,10 +63,6 @@
 }
 .props-icon{
   margin: 0 auto;
-}
-
-.flex-col{
-  flex-direction: column;
 }
 
 .align-items-center{
@@ -120,17 +113,7 @@
   }
 }
 
-:host{
-  width: 60%;
-  display: block;
-  margin: 0 auto;
-}
-
 @media only screen and (max-width: 480px) {
-  :host{
-    width: 100%;
-  }
-
   .file-upload{
     width: 100%;
   }

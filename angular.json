@@ -33,7 +33,21 @@
               "@uppy/dashboard/dist/style.min.css",
               "@uppy/image-editor/dist/style.min.css"
             ],
-            "scripts": []
+            "scripts": [],
+            "allowedCommonJsDependencies": [
+              "cos-js-sdk-v5",
+              "lodash",
+              "dayjs",
+              "crypto-js",
+              "base64-js",
+              "cropperjs",
+              "photoviewer",
+              "lodash.throttle",
+              "namespace-emitter",
+              "classnames",
+              "is-shallow-equal",
+              "lodash.debounce"
+            ]
           },
           "configurations": {
             "production": {

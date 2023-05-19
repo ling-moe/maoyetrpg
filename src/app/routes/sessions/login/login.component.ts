@@ -29,7 +29,6 @@ export class LoginComponent {
 
   login() {
     this.isSubmitting = true;
-
     this.auth
       .login(this.username.value, this.password.value)
       .pipe(filter(authenticated => authenticated))

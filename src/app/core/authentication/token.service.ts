@@ -39,6 +39,10 @@ export class TokenService implements OnDestroy {
     return of(this.token!.user);
   }
 
+  simpleUser(): User {
+    return this.token!.user;
+  }
+
   refresh(): Observable<BaseToken | undefined> {
     this.buildRefresh();
 
