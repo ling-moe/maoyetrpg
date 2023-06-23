@@ -44,11 +44,11 @@
     <div class="row p-16">
       <div class="col-md-7 d-flex flex-col">
         <div>
-          <span class="f-w-600 text-pink-400 max-width-fixed-200">职业技能说明：</span>
+          <span class="max-width-fixed-200">职业技能说明：</span>
           <span>{{getJobDesc(model?.person?.jobval)}}</span>
         </div>
         <div>
-          <span class="f-w-600 text-pink-400 max-width-fixed-200">信用评级范围：</span>
+          <span class="max-width-fixed-200">信用评级范围：</span>
           <span>{{getHonesty(model?.person?.jobval)}}</span>
         </div>
       </div>
@@ -247,28 +247,23 @@
 
   <button mat-raised-button class="m-t-32" color="primary" [disabled]="!form.valid">Submit</button>
 </form>
-
-
 <ng-template let-i="i" let-item="item" #skillLine>
   <div class="row m-8 p-16">
-    <div class="col-md-2 d-flex align-items-center">
-      <span class="p-r-32 justify-content-flex-start align-content-center flex-wrap f-s-20 text-center text-pink-400"
-            style="width: 24px;height: 24px; line-height: normal;">{{i+1}}</span>
-      <mat-form-field class="w-full">
-        <mat-label *ngIf="!skills[item.value.num].select">技能</mat-label>
-        <input *ngIf="!skills[item.value.num].select" matInput type="text" value="信用评级"
-               [formControl]="item.controls.name">
+    <mat-form-field class="col-md-2">
+      <mat-label *ngIf="!skills[item.value.num].select">技能</mat-label>
+      <input *ngIf="!skills[item.value.num].select" matInput type="text" value="信用评级"
+              [formControl]="item.controls.name">
 
-        <mat-label *ngIf="skills[item.value.num].select">技能:
-          {{skills[item.value.num].name}}</mat-label>
-        <mat-select *ngIf="skills[item.value.num].select"
-                    (selectionChange)="iniChange($event, item, skills[item.value.num].selectValue)"
-                    [formControl]="item.controls.name">
-          <mat-option *ngFor="let item1 of jobLimitSkill(skills[item.value.num].selectValue)"
-                      [value]="item1.num">{{item1.name}}</mat-option>
-        </mat-select>
-      </mat-form-field>
-    </div>
+      <mat-label *ngIf="skills[item.value.num].select">技能:
+        {{skills[item.value.num].name}}</mat-label>
+      <mat-select *ngIf="skills[item.value.num].select"
+                  (selectionChange)="iniChange($event, item, skills[item.value.num].selectValue)"
+                  [formControl]="item.controls.name">
+        <mat-option *ngFor="let item1 of jobLimitSkill(skills[item.value.num].selectValue)"
+                    [value]="item1.num">{{item1.name}}</mat-option>
+      </mat-select>
+      <span matPrefix class="p-r-32 f-s-20 text-pink-400">{{i+1}}</span>
+    </mat-form-field>
     <mat-form-field class="col-md-1 skill-width">
       <mat-label>初始</mat-label>
       <input matInput type="text" [formControl]="item.controls.ini">
