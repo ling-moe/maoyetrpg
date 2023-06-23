@@ -42,7 +42,7 @@
   <div class="w-full h-full p-x-24 p-y-8 mat-elevation-z8">
     <h3>技能信息</h3>
     <div class="row p-16">
-      <div class="col-md-8 d-flex flex-col">
+      <div class="col-md-7 d-flex flex-col">
         <div>
           <span class="f-w-600 text-pink-400 max-width-fixed-200">职业技能说明：</span>
           <span>{{getJobDesc(model?.person?.jobval)}}</span>
@@ -52,7 +52,7 @@
           <span>{{getHonesty(model?.person?.jobval)}}</span>
         </div>
       </div>
-      <div class="col-md-4">
+      <div class="col-md-5">
         <div class="d-flex">
           <div class="max-width-fixed-200">
             本职技能点
@@ -228,7 +228,7 @@
     <h3>资产情况</h3>
     <div class="row">
       <div class="col-md-6">
-        信用评级：{{credit()}}%
+        信用评级：{{ credit() }}%
       </div>
       <div class="col-md-6">
         生活水平：{{live()}}

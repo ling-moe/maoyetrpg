@@ -73,6 +73,7 @@
 .max-width-fixed-200{
   max-width: 120px;
   width: 200px;
+  white-space: nowrap;
 }
 
 .tips-icon{
@@ -110,7 +111,7 @@
   }
 }
 
-@media only screen and (max-width: 480px) {
+@media only screen and (max-width: 1152px) {
   .file-upload{
     width: 100%;
   }
