@@ -81,6 +81,9 @@
   width: 18px;
   height: 20px;
 }
+.skill-width{
+  width: 100%;
+}
 
 :host {
   ::ng-deep {
@@ -139,6 +142,10 @@
 
   .props-icon{
     display: none;
+  }
+
+  .skill-width{
+    width: 50%;
   }
 
 }

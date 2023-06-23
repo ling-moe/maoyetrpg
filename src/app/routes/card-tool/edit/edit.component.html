@@ -250,7 +250,7 @@
 
 
 <ng-template let-i="i" let-item="item" #skillLine>
-  <div class="row mat-elevation-z3 m-8 p-16">
+  <div class="row m-8 p-16">
     <div class="col-md-1 d-flex p-b-4 justify-content-flex-start align-content-center flex-wrap">
       <mat-icon *ngIf="!item.value.isFree">block</mat-icon>
       <mat-icon *ngIf="item.value.bz && item.value.isFree" color="warn" class="r-full" matRipple
@@ -272,21 +272,21 @@
                     [value]="item1.num">{{item1.name}}</mat-option>
       </mat-select>
     </mat-form-field>
-    <mat-form-field class="col-md-1 w-full">
+    <mat-form-field class="col-xs-1 skill-width">
       <mat-label>初始</mat-label>
       <input matInput type="text" [formControl]="item.controls.ini">
     </mat-form-field>
-    <mat-form-field class="col-md-2 w-full">
+    <mat-form-field class="col-xs-2 skill-width">
       <mat-label>成长</mat-label>
       <input matInput type="text" [formControl]="item.controls.grow">
       <mat-error *ngIf="item.invalid"> 你也被魅魔吸干了？ </mat-error>
     </mat-form-field>
-    <mat-form-field class="col-md-2 w-full">
+    <mat-form-field class="col-xs-2 skill-width">
       <mat-label>本职</mat-label>
       <input matInput type="text" [formControl]="item.controls.pro">
       <mat-error *ngIf="item.invalid"> 你也要超越极限吗？</mat-error>
     </mat-form-field>
-    <mat-form-field class="col-md-2 w-full">
+    <mat-form-field class="col-xs-2 skill-width">
       <mat-label>兴趣</mat-label>
       <input matInput type="text" [formControl]="item.controls.interest">
       <mat-error *ngIf="item.invalid">你的兴趣爱好还真是广泛呢？</mat-error>

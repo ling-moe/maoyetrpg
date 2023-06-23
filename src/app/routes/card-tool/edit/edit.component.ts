@@ -1,4 +1,13 @@
-import { Component, ElementRef, OnChanges, OnInit, SimpleChanges, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnChanges,
+  OnInit,
+  SimpleChanges,
+  ViewChild,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+} from '@angular/core';
 import {
   FormBuilder,
   FormControl,
@@ -11,7 +20,7 @@ import {
 } from '@angular/forms';
 import { User, TokenService } from '@core';
 import { FormlyFieldConfig, FormlyFormOptions } from '@ngx-formly/core';
-import { map, filter, pairwise, startWith, switchMap } from 'rxjs/operators';
+import { map, filter, pairwise, startWith, switchMap, tap } from 'rxjs/operators';
 import { CardToolService } from '../card-tool.service';
 import { maxBy, shuffle, toNumber, zipObject } from 'lodash';
 import { MatSelectChange } from '@angular/material/select';
@@ -53,7 +62,7 @@ import { ActivatedRoute, Router } from '@angular/router';
   selector: 'app-card-tool-Edit',
   templateUrl: './edit.component.html',
   styleUrls: ['./edit.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CardToolEditComponent implements OnInit, OnChanges {
   user?: User;
@@ -123,7 +132,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     private cardToolService: CardToolService,
     private fb: FormBuilder,
     private activatedRoute: ActivatedRoute,
-    private cdr: ChangeDetectorRef,
+    private cdr: ChangeDetectorRef
   ) {}
   ngOnChanges(changes: SimpleChanges): void {
     console.log(`触发变更检测：${changes}`);
@@ -146,10 +155,6 @@ export class CardToolEditComponent implements OnInit, OnChanges {
         this.options.resetModel?.();
       });
   }
-  t(i: any) {
-    console.log(i);
-    return true;
-  }
 
   private initForm() {
     // this.user = this.token.simpleUser();
@@ -157,6 +162,9 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     this.cardToolService.getJobAndSkill().subscribe(cocConfig => {
       this.jobs = cocConfig.job;
       this.skills = cocConfig.skills.sort((a, b) => a.num - b.num);
+      this.skills
+        .map(skill => this.initSkillLine(skill, false))
+        .forEach(skill => this.skillArray.push(skill));
       this.skselects = cocConfig.skselect;
       this.weapons = Object.keys(cocConfig.weapons).map(key => ({
         category: WeaponCategory[key],
@@ -167,7 +175,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     this.personChart.resize();
     window.addEventListener('resize', () => {
       this.personChart?.resize();
-      });
+    });
     this.subcribeSkillPoint();
     this.initPersonChart();
   }
@@ -197,12 +205,14 @@ export class CardToolEditComponent implements OnInit, OnChanges {
   live() {
     const obj = this.form.getRawValue().skill[0];
     if (!obj) return;
-    return liveLevel(calcCredit(
-      toNumber(obj.ini ?? 0),
-      toNumber(obj.grow ?? 0),
-      toNumber(obj.pro ?? 0),
-      toNumber(obj.interest ?? 0)
-    ));
+    return liveLevel(
+      calcCredit(
+        toNumber(obj.ini ?? 0),
+        toNumber(obj.grow ?? 0),
+        toNumber(obj.pro ?? 0),
+        toNumber(obj.interest ?? 0)
+      )
+    );
   }
 
   addItem() {
@@ -230,7 +240,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
 
   jobLimitSkill(type: SkselectKey) {
     const skill = this.skselects[type][0].all;
-    const limitSkill = this.skselects[type][0][this.jobs[+this.model?.person?.jobval].job];
+    const limitSkill = this.skselects[type][0][this.jobs[+this.model?.person?.jobval]?.job];
     if (limitSkill) {
       return limitSkill.map(num => skill[num.num]);
     }
@@ -257,11 +267,12 @@ export class CardToolEditComponent implements OnInit, OnChanges {
   }
 
   jobSkills() {
-    console.log(this.skillArray.controls.filter(skill => skill.value.bz));
+    // console.log('本职技能:' + this.skillArray.controls.filter(skill => skill.value.bz).length);
     return this.skillArray.controls.filter(skill => skill.value.bz);
   }
 
   interestSkills() {
+    console.log('兴趣技能:' + this.skillArray.controls.filter(skill => !skill.value.bz).length);
     return this.skillArray.controls.filter(skill => !skill.value.bz);
   }
 
@@ -372,7 +383,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
           { name: '智力', max: 100 },
           { name: '教育', max: 100 },
         ],
-        radius: '60%'
+        radius: '60%',
       },
       series: [
         {
@@ -385,7 +396,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
             },
           ],
         },
-      ]
+      ],
     });
   }
 
@@ -518,12 +529,21 @@ export class CardToolEditComponent implements OnInit, OnChanges {
           hooks: {
             onChanges: (field: FormlyFieldConfig) => {
               field.options?.fieldChanges
-                ?.pipe(filter(e => e.field === field && e.value !== null))
+                ?.pipe(
+                  filter(e => e.field === field && e.value !== null),
+                  tap(e => console.log(e))
+                )
                 .subscribe(e => {
                   const curJob = this.jobs[e.value];
-                  this.skillArray.clear();
                   this.freeSkill = {};
-                  curJob.skills.forEach(skillNum => (this.skills[skillNum].bz = true));
+                  this.skillArray.controls.forEach(control =>
+                    control.patchValue({ bz: false, isFree: false }, { emitEvent: false })
+                  );
+                  curJob.skills.forEach(skillNum =>
+                    this.skillArray
+                      .at(skillNum)
+                      .patchValue({ bz: true, isFree: false }, { emitEvent: false })
+                  );
                   // 记录剩余可选技能数量
                   if (curJob.fouroTwo.length !== 0) {
                     this.freeSkill.fouroTwo = 2;
@@ -537,9 +557,6 @@ export class CardToolEditComponent implements OnInit, OnChanges {
                   if (curJob.all !== 0) {
                     this.freeSkill.all = curJob.all;
                   }
-                  this.skills
-                    .map(skill => this.initSkillLine(skill, false))
-                    .forEach(skill => this.skillArray.push(skill));
                 });
             },
           },
