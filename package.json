@@ -42,6 +42,7 @@
     "echarts": "^5.4.2",
     "moment": "^2.29.4",
     "ng-matero": "^14.3.0",
+    "ngx-indexed-db": "^16.0.0",
     "ngx-permissions": "^14.0.0",
     "ngx-progressbar": "^9.0.0",
     "ngx-toastr": "^15.2.1",

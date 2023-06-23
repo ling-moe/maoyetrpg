@@ -30,7 +30,7 @@ import {
   FreeSkillNum,
   FreeSkillRecord,
   Job,
-  More,
+  Career,
   Name,
   RoleCard,
   RoleJob,
@@ -57,6 +57,7 @@ import {
 import { EChartsType } from 'echarts/core';
 import { echarts } from './echart.config';
 import { ActivatedRoute, Router } from '@angular/router';
+import { NgxIndexedDBService } from 'ngx-indexed-db';
 
 @Component({
   selector: 'app-card-tool-Edit',
@@ -90,36 +91,21 @@ export class CardToolEditComponent implements OnInit, OnChanges {
   freeSkill: FreeSkillRecord = {};
   form = new FormGroup({
     skill: this.fb.array<FormGroup<SkillControl>>([]),
-    things: this.fb.array([new FormControl('')]),
+    things: this.fb.array([new FormControl()]),
     mov: new FormControl(0),
-    player: new FormControl(''),
     cash: new FormControl(''),
     level: new FormControl(''),
-    assetsDesc: new FormControl(''),
     hp: new FormControl(''),
     mp: new FormControl(''),
     san: new FormControl(''),
   });
   model: any = {
-    job: <RoleJob>{},
-    hp: <StatusBar>{},
-    mp: <StatusBar>{},
-    san: <StatusBar>{},
+    userid: 0,
+    person: {},
     attribute: {},
-    bz: [],
-    jobwt: [],
-    health: '',
-    mind: '',
-    money: [],
-    more: <More>{},
-    name: <Name>{},
+    career: <Career>{},
     story: {},
     things: [],
-    touniang: '',
-    userid: 0,
-    weapons: [],
-    zdy: [],
-    person: {},
   };
 
   skillArray = this.form.get('skill') as FormArray<FormGroup<SkillControl>>;
@@ -132,7 +118,8 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     private cardToolService: CardToolService,
     private fb: FormBuilder,
     private activatedRoute: ActivatedRoute,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private dbService: NgxIndexedDBService
   ) {}
   ngOnChanges(changes: SimpleChanges): void {
     console.log(`触发变更检测：${changes}`);
@@ -142,6 +129,24 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     this.initForm();
     // this.initData();
   }
+
+  submit() {
+    const characterCard = {
+      ...this.model,
+      skill: this.skillArray.value,
+      weapon: this.currentWeapons.map(weapon => weapon.value),
+      thing: this.itemArray.value,
+    };
+    // this.cardToolService.createRoleCard(this.model).subscribe(res => {
+    //   console.log(res);
+    // });
+    console.log(this.skillArray.value);
+    console.log(this.model);
+    this.dbService.add('characterCard', characterCard).subscribe(key => {
+      console.log('key: ', key);
+    });
+  }
+
   options: FormlyFormOptions = {};
   initData() {
     this.activatedRoute.params
@@ -224,18 +229,20 @@ export class CardToolEditComponent implements OnInit, OnChanges {
 
   iniChange(v: MatSelectChange, item: FormGroup<SkillControl>, type: SkselectKey) {
     const skill = this.skselects[type][0].all;
-    item.patchValue({ ini: toNumber(skill[v.value].ini ?? 0) });
+    item.patchValue({ ini: toNumber(skill[v.value].ini ?? 0), selectedNum: skill[v.value].num });
   }
 
   addFreeSkill(v: MatSelectChange, chooseType: FreeSkillNum) {
     this.freeSkill[chooseType]! -= 1;
     this.skills[v.value].bz = true;
     this.skillArray.at(v.value).patchValue({ bz: true, isFree: true, freeType: chooseType });
+    this.skillArray.at(v.value).enable({ emitEvent: false });
   }
 
   removeJobSkill(num: number) {
     this.freeSkill[this.skillArray.at(num).value.freeType!]! += 1;
     this.skillArray.at(num).patchValue({ bz: false, isFree: false, freeType: null });
+    this.skillArray.at(num).disable({ emitEvent: false });
   }
 
   jobLimitSkill(type: SkselectKey) {
@@ -267,7 +274,6 @@ export class CardToolEditComponent implements OnInit, OnChanges {
   }
 
   jobSkills() {
-    // console.log('本职技能:' + this.skillArray.controls.filter(skill => skill.value.bz).length);
     return this.skillArray.controls.filter(skill => skill.value.bz);
   }
 
@@ -283,7 +289,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
       ini: [{ value: toNumber(skill.ini ?? 0), disabled: true }],
       grow: [skill.grow === '' ? null : toNumber(skill.grow ?? 0), Validators.min(0)],
       pro: [
-        skill.pro === '' ? null : toNumber(skill.pro ?? 0),
+        { value: skill.pro === '' ? null : toNumber(skill.pro ?? 0), disabled: true },
         [
           Validators.min(0),
           requiredDynamicMax(
@@ -305,6 +311,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
       isFree: [isFree],
       bz: [skill.bz],
       freeType: <any[]>[null],
+      selectedNum: <any[]>[null],
     });
     formGroup.controls.pro.valueChanges
       .pipe(startWith(null), pairwise())
@@ -321,17 +328,6 @@ export class CardToolEditComponent implements OnInit, OnChanges {
       ),
     });
     return formGroup;
-  }
-
-  submit() {
-    const { cash, level, assetsDesc } = this.form.value;
-    this.model.assets = { credit: this.credit(), live: this.live(), cash, level, assetsDesc };
-    this.model.things = this.form.get('things')?.value as string[];
-    this.model.weapons = this.currentWeapons.map(weapon => weapon.value);
-    // console.log(this.model);
-    // this.cardToolService.createRoleCard(this.model).subscribe(res => {
-    //   console.log(res);
-    // });
   }
 
   calcRate(item: FormGroup<SkillControl>, sub: number) {
@@ -533,14 +529,16 @@ export class CardToolEditComponent implements OnInit, OnChanges {
                 .subscribe(e => {
                   const curJob = this.jobs[e.value];
                   this.freeSkill = {};
-                  this.skillArray.controls.forEach(control =>
-                    control.patchValue({ bz: false, isFree: false }, { emitEvent: false })
-                  );
-                  curJob.skills.forEach(skillNum =>
+                  this.skillArray.controls.forEach(control => {
+                    control.patchValue({ bz: false, isFree: false }, { emitEvent: false });
+                    control.controls.pro.disable({ emitEvent: false });
+                  });
+                  curJob.skills.forEach(skillNum => {
                     this.skillArray
                       .at(skillNum)
-                      .patchValue({ bz: true, isFree: false }, { emitEvent: false })
-                  );
+                      .patchValue({ bz: true, isFree: false }, { emitEvent: false });
+                    this.skillArray.at(skillNum).controls.pro.enable({ emitEvent: false });
+                  });
                   // 记录剩余可选技能数量
                   if (curJob.fouroTwo.length !== 0) {
                     this.freeSkill.fouroTwo = 2;

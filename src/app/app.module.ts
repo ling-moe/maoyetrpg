@@ -13,6 +13,7 @@ import { NgxPermissionsModule } from 'ngx-permissions';
 import { ToastrModule } from 'ngx-toastr';
 import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
+import { DBConfig, NgxIndexedDBModule } from 'ngx-indexed-db';
 
 import { environment } from '@env/environment';
 import { BASE_URL, httpInterceptorProviders, appInitializerProviders } from '@core';
@@ -25,6 +26,19 @@ export function TranslateHttpLoaderFactory(http: HttpClient) {
 import { LoginService } from '@core/authentication/login.service';
 import { FakeLoginService } from './fake-login.service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+const dbConfig: DBConfig  = {
+  name: 'trpg',
+  version: 1,
+  objectStoresMeta: [{
+    store: 'characterCard',
+    storeConfig: { keyPath: 'characterCardId', autoIncrement: true },
+    storeSchema: [
+      { name: 'name', keypath: 'name', options: { unique: false } },
+      { name: 'job', keypath: 'job', options: { unique: false } }
+    ]
+  }]
+};
 
 @NgModule({
   declarations: [AppComponent],
@@ -46,6 +60,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
       },
     }),
     BrowserAnimationsModule,
+    NgxIndexedDBModule.forRoot(dbConfig),
   ],
   providers: [
     { provide: BASE_URL, useValue: environment.baseUrl },

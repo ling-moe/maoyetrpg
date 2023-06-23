@@ -15,6 +15,7 @@ export interface SkillControl {
   isFree: FormControl<boolean | null>;
   bz: FormControl<boolean | null>;
   freeType: FormControl<FreeSkillNum | null>;
+  selectedNum: FormControl<number | null>;
 }
 export interface WeaponsGroup{
   category: string;
@@ -248,7 +249,7 @@ export interface RoleCard {
   health:    string;
   mind:      string;
   money:     string[];
-  more:      More;
+  more:      Career;
   name:      Name;
   story:     { [key: string]: string };
   things:    string[];
@@ -294,7 +295,7 @@ export interface Bz {
   selectIndex?: string;
 }
 
-export interface More {
+export interface Career {
   huoban: string;
   jingli: string;
   kesulu: string;
