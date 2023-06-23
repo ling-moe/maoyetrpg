@@ -118,6 +118,10 @@ export function calcSan(pow: number){
   return pow;
 }
 
+export function calcCredit(ini: number, grow: number,pro: number,interest: number){
+  return ini + grow + pro + interest;
+}
+
 export function modelToRoleCard(model: any, config: CocConfig): RoleCard{
   const roleCard: any = model;
   const { str, con, pow, dex, app, siz, int, edu, hp, mp, san } = roleCard.attribute;

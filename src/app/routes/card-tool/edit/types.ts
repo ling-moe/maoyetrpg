@@ -14,6 +14,7 @@ export interface SkillControl {
   interest: FormControl<number | null>;
   isFree: FormControl<boolean | null>;
   bz: FormControl<boolean | null>;
+  freeType: FormControl<FreeSkillNum | null>;
 }
 export interface WeaponsGroup{
   category: string;
@@ -23,7 +24,7 @@ export interface WeaponsGroup{
 export interface CocConfig {
   job:      Job[];
   skills:   Skill[];
-  skselect: Skselect[];
+  skselect: Skselect;
   weapons:  { [key: string]: Weapon[] };
 }
 

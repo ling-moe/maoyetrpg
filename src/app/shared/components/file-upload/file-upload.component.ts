@@ -19,7 +19,6 @@ export class FileUploadComponent implements OnInit, OnDestroy {
    uppy?: Uppy;
    avatar?: string;
 
-
    constructor() {}
 
    ngOnInit() {

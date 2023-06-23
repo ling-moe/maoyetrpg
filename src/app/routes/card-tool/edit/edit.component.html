@@ -1,45 +1,46 @@
 <form [formGroup]="form" (ngSubmit)="submit()" autocomplete="off">
-  <h3>人物信息</h3>
-  <mat-divider></mat-divider>
-  <div class="d-flex flex-wrap">
-    <file-upload (avatorUrl)="modifyAvatar($event)" class="file-upload"></file-upload>
-    <formly-form [model]="model.person" [fields]="personInfoFields" [form]="form"
-                 [options]="options" class="padding-top-20 info-fields">
-    </formly-form>
+  <div class="p-x-24 p-y-8 mat-elevation-z8">
+    <h3>人物信息</h3>
+    <div class="d-flex flex-wrap">
+      <file-upload (avatorUrl)="modifyAvatar($event)" class="file-upload"></file-upload>
+      <formly-form [model]="model.person" [fields]="personInfoFields" [form]="form"
+                   [options]="options" class="p-y-24 info-fields">
+      </formly-form>
+    </div>
   </div>
-
-  <h3>故事背景</h3>
-  <mat-divider></mat-divider>
-  <div class="p-x-24 p-y-8">
+  <mat-divider class="m-y-16"></mat-divider>
+  <div class="p-x-24 p-y-8 mat-elevation-z8">
+    <h3>故事背景</h3>
     <formly-form [model]="model.story" [fields]="storyFields" [form]="form" [options]="options">
     </formly-form>
   </div>
-
-  <h3>属性信息</h3>
-  <mat-divider></mat-divider>
-  <div class="d-flex flex-wrap p-24">
-    <div class="props-chart" #personChart></div>
-    <div class="props-wrap flex-wrap">
-      <div class="props-form flex-wrap">
-        <div class="base-props-fields">
-          <formly-form [model]="model.attribute" [fields]="personBaseFields" [form]="form" [options]="options">
-          </formly-form>
+  <mat-divider class="m-y-16"></mat-divider>
+  <div class="p-x-24 p-y-8 mat-elevation-z8">
+    <h3>属性信息</h3>
+    <div class="d-flex flex-wrap">
+      <div class="props-chart" #personChart></div>
+      <div class="props-wrap flex-wrap">
+        <div class="props-form flex-wrap">
+          <div class="base-props-fields">
+            <formly-form [model]="model.attribute" [fields]="personBaseFields" [form]="form"
+                         [options]="options">
+            </formly-form>
+          </div>
+          <mat-icon class="props-icon">double_arrow</mat-icon>
+          <div class="advance-props-fields">
+            <formly-form [model]="model.attribute" [fields]="personAdvanceFields" [form]="form"
+                         [options]="options">
+            </formly-form>
+          </div>
         </div>
-        <mat-icon class="props-icon">double_arrow</mat-icon>
-        <div class="advance-props-fields">
-          <formly-form [model]="model.attribute" [fields]="personAdvanceFields" [form]="form" [options]="options">
-          </formly-form>
-        </div>
+        <button mat-raised-button type="button" (click)="randomProps()">随机属性</button>
+        <div class="p-t-8">总值(除幸运)：{{ propsTotal }}</div>
       </div>
-      <button mat-raised-button type="button" (click)="randomProps()">随机属性</button>
-      <div class="p-t-8">总值(除幸运)：{{ propsTotal }}</div>
     </div>
   </div>
-
-  <h3>技能信息</h3>
-  <mat-divider></mat-divider>
-
-  <div class="w-full h-full">
+  <mat-divider class="m-y-16"></mat-divider>
+  <div class="w-full h-full p-x-24 p-y-8 mat-elevation-z8">
+    <h3>技能信息</h3>
     <div class="row p-16">
       <div class="col-md-8 d-flex flex-col">
         <div>
@@ -77,8 +78,8 @@
     </div>
     <h4>本职技能</h4>
 
-    <div *ngFor="let item of listJobSkills(); let i = index;" formArrayName="skill">
-      <ng-container [formGroupName]="i" *ngTemplateOutlet="skillLine;context:{i, item}" >
+    <div *ngFor="let item of jobSkills(); let i = index;" formArrayName="skill">
+      <ng-container [formGroupName]="i" *ngTemplateOutlet="skillLine;context:{i, item}">
       </ng-container>
     </div>
     <div *ngIf="model.job && this.freeSkill.fouroTwo" class="row m-8 p-16">
@@ -132,23 +133,24 @@
 
     <h4>兴趣技能</h4>
     <div style="height: 530px;overflow: hidden;overflow-y: scroll;">
-      <div *ngFor="let item of listInterestSkills(); let i = index;" formArrayName="skill">
-        <ng-container [formGroupName]="i" *ngTemplateOutlet="skillLine;context:{i, item}" >
+      <div *ngFor="let item of interestSkills(); let i = index;" formArrayName="skill">
+        <ng-container [formGroupName]="i" *ngTemplateOutlet="skillLine;context:{i, item}">
         </ng-container>
       </div>
     </div>
     <div class="row m-8 p-16">
       <div class="col-md-1"></div>
       <div class="col-md-2">
-        <!-- <button mat-raised-button type="button">添加自定义技能</button> -->
+        <button mat-raised-button type="button">添加自定义技能</button>
       </div>
     </div>
   </div>
 
-  <h3>武器</h3>
-  <mat-divider></mat-divider>
-  <div class="d-flex w-full flex-col">
-    <mat-form-field class="w-full m-t-24">
+
+  <mat-divider class="m-y-16"></mat-divider>
+  <div class="d-flex w-full flex-col p-x-24 p-y-8 p-b-24 mat-elevation-z8">
+    <h3>武器</h3>
+    <mat-form-field class="w-full">
       <mat-label>选择武器</mat-label>
       <mat-select (selectionChange)="addWeapon($event)">
         <mat-optgroup *ngFor="let group of weapons" [label]="group.category">
@@ -158,7 +160,7 @@
         </mat-optgroup>
       </mat-select>
     </mat-form-field>
-    <mat-table [dataSource]="currentWeapons" class="fixed-table mat-elevation-z8">
+    <mat-table [dataSource]="currentWeapons" class="fixed-table">
       <ng-container matColumnDef="name" sticky="true">
         <mat-header-cell *matHeaderCellDef> 武器名称 </mat-header-cell>
         <mat-cell *matCellDef="let element"> {{element.name}} </mat-cell>
@@ -206,12 +208,11 @@
       <mat-row *matRowDef="let row; columns: weaponsColumn;"></mat-row>
     </mat-table>
   </div>
-
-  <h3>携带物品</h3>
-  <mat-divider></mat-divider>
-  <div class="w-full h-full d-flex flex-col">
+  <mat-divider class="m-y-16"></mat-divider>
+  <div class="w-full h-full d-flex flex-col p-x-24 p-y-8 p-b-24 mat-elevation-z8">
+    <h3>携带物品</h3>
     <mat-form-field *ngFor="let item of itemArray.controls; let i = index;"
-                    formArrayName="things" class="w-full mat-elevation-z3 m-t-8 m-b-8 p-16">
+                    formArrayName="things" class="w-full m-b-8">
       <mat-label>物品</mat-label>
       <input matInput #message maxlength="100" placeholder="随身携带的物品"
              [formControl]="convert(item)">
@@ -222,10 +223,9 @@
       <mat-icon>add</mat-icon>
     </button>
   </div>
-
-  <h3>资产情况</h3>
-  <mat-divider></mat-divider>
-  <div class="p-x-24 p-y-8">
+  <mat-divider class="m-y-16"></mat-divider>
+  <div class="p-x-24 p-y-8 mat-elevation-z8">
+    <h3>资产情况</h3>
     <div class="row">
       <div class="col-md-6">
         信用评级：{{credit()}}%
@@ -237,11 +237,11 @@
     <formly-form [model]="model" [fields]="assetsFields" [form]="form" [options]="options">
     </formly-form>
   </div>
-
-  <h3>生涯</h3>
-  <mat-divider></mat-divider>
-  <div class="p-x-24 p-y-8">
-    <formly-form [model]="model.more" [fields]="careerFields" [form]="form" class="p-24" [options]="options">
+  <mat-divider class="m-y-16"></mat-divider>
+  <div class="p-x-24 p-y-8 mat-elevation-z8">
+    <h3>生涯</h3>
+    <formly-form [model]="model.more" [fields]="careerFields" [form]="form"
+                 [options]="options">
     </formly-form>
   </div>
 
@@ -253,8 +253,10 @@
   <div class="row mat-elevation-z3 m-8 p-16">
     <div class="col-md-1 d-flex p-b-4 justify-content-flex-start align-content-center flex-wrap">
       <mat-icon *ngIf="!item.value.isFree">block</mat-icon>
-      <mat-icon *ngIf="item.value.bz && item.value.isFree" color="warn" class="r-full" matRipple>delete</mat-icon>
-      <span class="f-s-20 text-center" style="width: 24px;height: 24px; line-height: normal;">{{i+1}}</span>
+      <mat-icon *ngIf="item.value.bz && item.value.isFree" color="warn" class="r-full" matRipple
+                (click)="removeJobSkill(item.value.num)">delete</mat-icon>
+      <span class="f-s-20 text-center"
+            style="width: 24px;height: 24px; line-height: normal;">{{i+1}}</span>
     </div>
     <mat-form-field class="col-md-2 w-full">
       <mat-label *ngIf="!skills[item.value.num].select">技能</mat-label>

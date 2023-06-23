@@ -12,7 +12,7 @@ import { AuthService, User } from '@core/authentication';
       [matMenuTriggerFor]="menu"
     >
       <img class="matero-avatar" [src]="avatar" width="32" alt="avatar" />
-      <span class="matero-username" fxHide.lt-sm>{{ user.name }}</span>
+      <span class="matero-username" fxHide.lt-sm>{{ user?.name }}</span>
     </button>
 
     <mat-menu #menu="matMenu">
@@ -32,12 +32,12 @@ import { AuthService, User } from '@core/authentication';
   `,
 })
 export class UserComponent implements OnInit {
-  user!: User;
+  user?: User;
 
   constructor(private router: Router, private auth: AuthService, private cdr: ChangeDetectorRef) {}
 
   get avatar(): string{
-    return `https://maoyetrpg-1254195378.cos.ap-guangzhou.myqcloud.com/resource/${this.user.touxiang}`;
+    return this.user?.touxiang ? `https://maoyetrpg-1254195378.cos.ap-guangzhou.myqcloud.com/resource/${this.user.touxiang}` : '';
   }
 
   ngOnInit(): void {

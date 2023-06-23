@@ -16,25 +16,25 @@ const routes: Routes = [
   {
     path: '',
     component: AdminLayoutComponent,
-    canActivate: [AuthGuard],
-    canActivateChild: [AuthGuard],
+    // canActivate: [AuthGuard],
+    // canActivateChild: [AuthGuard],
     children: [
       { path: '', redirectTo: 'card-tool', pathMatch: 'full' },
-      { path: 'dashboard', component: DashboardComponent },
+      // { path: 'dashboard', component: DashboardComponent },
       { path: '403', component: Error403Component },
       { path: '404', component: Error404Component },
       { path: '500', component: Error500Component },
       { path: 'card-tool', loadChildren: () => import('./card-tool/card-tool.module').then(m => m.CardToolModule) },
     ],
   },
-  {
-    path: 'auth',
-    component: AuthLayoutComponent,
-    children: [
-      { path: 'login', component: LoginComponent },
-      { path: 'register', component: RegisterComponent },
-    ],
-  },
+  // {
+  //   path: 'auth',
+  //   component: AuthLayoutComponent,
+  //   children: [
+  //     { path: 'login', component: LoginComponent },
+  //     { path: 'register', component: RegisterComponent },
+  //   ],
+  // },
   { path: '**', redirectTo: 'card-tool' },
 ];
 

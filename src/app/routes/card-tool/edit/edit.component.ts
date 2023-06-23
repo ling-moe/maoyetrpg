@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnChanges, OnInit, SimpleChanges, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import {
   FormBuilder,
   FormControl,
@@ -35,6 +35,7 @@ import {
 } from './types';
 import {
   calcCashLevel,
+  calcCredit,
   calcDbAndBuild,
   calcMov,
   calcMP,
@@ -52,9 +53,10 @@ import { ActivatedRoute, Router } from '@angular/router';
   selector: 'app-card-tool-Edit',
   templateUrl: './edit.component.html',
   styleUrls: ['./edit.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class CardToolEditComponent implements OnInit {
-  user!: User;
+export class CardToolEditComponent implements OnInit, OnChanges {
+  user?: User;
   avatar?: string;
   jobs: Job[] = [];
   weapons: WeaponsGroup[] = [];
@@ -120,8 +122,12 @@ export class CardToolEditComponent implements OnInit {
     private token: TokenService,
     private cardToolService: CardToolService,
     private fb: FormBuilder,
-    private activatedRoute: ActivatedRoute
+    private activatedRoute: ActivatedRoute,
+    private cdr: ChangeDetectorRef,
   ) {}
+  ngOnChanges(changes: SimpleChanges): void {
+    console.log(`触发变更检测：${changes}`);
+  }
 
   ngOnInit() {
     this.initForm();
@@ -140,25 +146,28 @@ export class CardToolEditComponent implements OnInit {
         this.options.resetModel?.();
       });
   }
-  t(i: any){
+  t(i: any) {
     console.log(i);
     return true;
   }
 
   private initForm() {
-    this.user = this.token.simpleUser();
-    this.personInfoFields[0].fieldGroup![2].defaultValue = this.user.name;
+    // this.user = this.token.simpleUser();
+    this.personInfoFields[0].fieldGroup![2].defaultValue = this.user?.name;
     this.cardToolService.getJobAndSkill().subscribe(cocConfig => {
       this.jobs = cocConfig.job;
       this.skills = cocConfig.skills.sort((a, b) => a.num - b.num);
-      this.skselects = cocConfig.skselect[0];
+      this.skselects = cocConfig.skselect;
       this.weapons = Object.keys(cocConfig.weapons).map(key => ({
         category: WeaponCategory[key],
         weapons: cocConfig.weapons[key],
       }));
     });
     this.personChart = echarts.init(this.chartEle!.nativeElement);
-    this.personChart.resize({ width: 320, height: 350 });
+    this.personChart.resize();
+    window.addEventListener('resize', () => {
+      this.personChart?.resize();
+      });
     this.subcribeSkillPoint();
     this.initPersonChart();
   }
@@ -177,10 +186,10 @@ export class CardToolEditComponent implements OnInit {
   credit() {
     const obj = this.form.getRawValue().skill[0];
     if (!obj) return;
-    return (
-      toNumber(obj.ini ?? 0) +
-      toNumber(obj.grow ?? 0) +
-      toNumber(obj.pro ?? 0) +
+    return calcCredit(
+      toNumber(obj.ini ?? 0),
+      toNumber(obj.grow ?? 0),
+      toNumber(obj.pro ?? 0),
       toNumber(obj.interest ?? 0)
     );
   }
@@ -188,12 +197,12 @@ export class CardToolEditComponent implements OnInit {
   live() {
     const obj = this.form.getRawValue().skill[0];
     if (!obj) return;
-    const total =
-      toNumber(obj.ini ?? 0) +
-      toNumber(obj.grow ?? 0) +
-      toNumber(obj.pro ?? 0) +
-      toNumber(obj.interest ?? 0);
-    return liveLevel(total);
+    return liveLevel(calcCredit(
+      toNumber(obj.ini ?? 0),
+      toNumber(obj.grow ?? 0),
+      toNumber(obj.pro ?? 0),
+      toNumber(obj.interest ?? 0)
+    ));
   }
 
   addItem() {
@@ -210,8 +219,13 @@ export class CardToolEditComponent implements OnInit {
 
   addFreeSkill(v: MatSelectChange, chooseType: FreeSkillNum) {
     this.freeSkill[chooseType]! -= 1;
-    this.skills[v.value].bz=true;
-    this.skillArray.at(v.value).patchValue({bz: true, isFree: true});
+    this.skills[v.value].bz = true;
+    this.skillArray.at(v.value).patchValue({ bz: true, isFree: true, freeType: chooseType });
+  }
+
+  removeJobSkill(num: number) {
+    this.freeSkill[this.skillArray.at(num).value.freeType!]! += 1;
+    this.skillArray.at(num).patchValue({ bz: false, isFree: false, freeType: null });
   }
 
   jobLimitSkill(type: SkselectKey) {
@@ -225,25 +239,29 @@ export class CardToolEditComponent implements OnInit {
 
   chooseSkill(chooseType: FreeSkillNum) {
     if (chooseType === 'all') {
-      return this.skills;
+      return this.skillArray.value.filter(skill => !skill.bz).map(skill => this.skills[skill.num!]);
     }
     const options = this.jobs[+this.model?.person?.jobval][chooseType];
     if (chooseType === 'two') {
-      return (options[0] as number[]).map(option => this.skills[option]);
+      return (options[0] as number[])
+        .filter(option => !this.skillArray.value[option].bz)
+        .map(option => this.skills[option]);
     }
-    return (options as number[]).map(option => this.skills[option]);
+    return (options as number[])
+      .filter(option => !this.skillArray.value[option].bz)
+      .map(option => this.skills[option]);
   }
 
   addWeapon(e: MatSelectChange) {
     this.currentWeapons = [...this.currentWeapons, e.value];
   }
 
-  listJobSkills(){
+  jobSkills() {
     console.log(this.skillArray.controls.filter(skill => skill.value.bz));
     return this.skillArray.controls.filter(skill => skill.value.bz);
   }
 
-  listInterestSkills(){
+  interestSkills() {
     return this.skillArray.controls.filter(skill => !skill.value.bz);
   }
 
@@ -252,9 +270,9 @@ export class CardToolEditComponent implements OnInit {
       num: [toNumber(skill.num ?? 0)],
       name: [{ value: skill.name, disabled: !skill.select }],
       ini: [{ value: toNumber(skill.ini ?? 0), disabled: true }],
-      grow: [toNumber(skill.grow ?? 0), Validators.min(0)],
+      grow: [skill.grow === '' ? null : toNumber(skill.grow ?? 0), Validators.min(0)],
       pro: [
-        toNumber(skill.pro ?? 0),
+        skill.pro === '' ? null : toNumber(skill.pro ?? 0),
         [
           Validators.min(0),
           requiredDynamicMax(
@@ -264,7 +282,7 @@ export class CardToolEditComponent implements OnInit {
         ],
       ],
       interest: [
-        toNumber(skill.interest ?? 0),
+        skill.interest === '' ? null : toNumber(skill.interest ?? 0),
         [
           Validators.min(0),
           requiredDynamicMax(
@@ -275,6 +293,7 @@ export class CardToolEditComponent implements OnInit {
       ],
       isFree: [isFree],
       bz: [skill.bz],
+      freeType: <any[]>[null],
     });
     formGroup.controls.pro.valueChanges
       .pipe(startWith(null), pairwise())
@@ -353,6 +372,7 @@ export class CardToolEditComponent implements OnInit {
           { name: '智力', max: 100 },
           { name: '教育', max: 100 },
         ],
+        radius: '60%'
       },
       series: [
         {
@@ -365,7 +385,7 @@ export class CardToolEditComponent implements OnInit {
             },
           ],
         },
-      ],
+      ]
     });
   }
 
@@ -503,8 +523,7 @@ export class CardToolEditComponent implements OnInit {
                   const curJob = this.jobs[e.value];
                   this.skillArray.clear();
                   this.freeSkill = {};
-                  curJob.skills
-                    .forEach(skillNum => this.skills[skillNum].bz = true);
+                  curJob.skills.forEach(skillNum => (this.skills[skillNum].bz = true));
                   // 记录剩余可选技能数量
                   if (curJob.fouroTwo.length !== 0) {
                     this.freeSkill.fouroTwo = 2;
