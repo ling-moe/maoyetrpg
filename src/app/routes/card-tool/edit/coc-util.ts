@@ -142,13 +142,13 @@ export function modelToRoleCard(model: any, config: CocConfig): RoleCard{
 
 export function roleCardToModel(roleCard: RoleCard): any{
   const model: any = roleCard;
-  model.job.value = roleCard.job.value;
+  // model.job.value = roleCard.job.value;
   delete model.hp;
   delete model.mp;
   delete model.san;
   delete model._id;
-  model.cash = roleCard.money[2];
-  model.level = roleCard.money[3];
+  // model.cash = roleCard.money[2];
+  // model.level = roleCard.money[3];
   delete model.money;
   return model;
 

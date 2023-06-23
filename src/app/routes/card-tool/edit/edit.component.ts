@@ -1,63 +1,58 @@
 import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   OnChanges,
   OnInit,
   SimpleChanges,
   ViewChild,
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
 } from '@angular/core';
 import {
+  AbstractControl,
+  FormArray,
   FormBuilder,
   FormControl,
   FormGroup,
-  Validators,
-  ValidatorFn,
-  AbstractControl,
-  FormArray,
   ValidationErrors,
+  ValidatorFn,
+  Validators,
 } from '@angular/forms';
-import { User, TokenService } from '@core';
-import { FormlyFieldConfig, FormlyFormOptions } from '@ngx-formly/core';
-import { map, filter, pairwise, startWith, switchMap, tap } from 'rxjs/operators';
-import { CardToolService } from '../card-tool.service';
-import { maxBy, shuffle, toNumber, zipObject } from 'lodash';
 import { MatSelectChange } from '@angular/material/select';
+import { ActivatedRoute } from '@angular/router';
+import { TokenService, User } from '@core';
+import { FormlyFieldConfig, FormlyFormOptions } from '@ngx-formly/core';
+import { EChartsType } from 'echarts/core';
+import { maxBy, shuffle, toNumber, zipObject } from 'lodash';
+import { NgxIndexedDBService } from 'ngx-indexed-db';
+import { filter, map, pairwise, startWith, switchMap, tap } from 'rxjs/operators';
+import { CardToolService } from '../card-tool.service';
 import {
-  Bz,
-  BzElement,
+  Time,
+  WeaponCategory,
+  calcCashLevel,
+  calcCredit,
+  calcDbAndBuild,
+  calcMP,
+  calcMov,
+  calcSan,
+  liveLevel,
+  roleCardToModel,
+} from './coc-util';
+import { echarts } from './echart.config';
+import {
+  Career,
   FreeSkillNum,
   FreeSkillRecord,
   Job,
-  Career,
-  Name,
   RoleCard,
-  RoleJob,
   Skill,
   SkillControl,
   Skselect,
   SkselectKey,
-  StatusBar,
   Weapon,
   WeaponsGroup,
 } from './types';
-import {
-  calcCashLevel,
-  calcCredit,
-  calcDbAndBuild,
-  calcMov,
-  calcMP,
-  calcSan,
-  liveLevel,
-  roleCardToModel,
-  Time,
-  WeaponCategory,
-} from './coc-util';
-import { EChartsType } from 'echarts/core';
-import { echarts } from './echart.config';
-import { ActivatedRoute, Router } from '@angular/router';
-import { NgxIndexedDBService } from 'ngx-indexed-db';
 
 @Component({
   selector: 'app-card-tool-Edit',
@@ -86,10 +81,16 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     'operation',
   ];
   currentWeapons: Weapon[] = [];
+  totalWeapons: Weapon[] = [];
   currentSkills: Skill[] = [];
   skselects!: Skselect;
   freeSkill: FreeSkillRecord = {};
   form = new FormGroup({
+    person: new FormGroup({}),
+    story: new FormGroup({}),
+    attribute: new FormGroup({}),
+    assets: new FormGroup({}),
+    career: new FormGroup({}),
     skill: this.fb.array<FormGroup<SkillControl>>([]),
     things: this.fb.array([new FormControl()]),
     mov: new FormControl(0),
@@ -106,8 +107,14 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     career: <Career>{},
     story: {},
     things: [],
+    assets: {},
   };
 
+  personForm = this.form.get('person') as FormGroup<any>;
+  storyForm = this.form.get('story') as FormGroup<any>;
+  attributeForm = this.form.get('attribute') as FormGroup<any>;
+  assetsForm = this.form.get('assets') as FormGroup<any>;
+  careerForm = this.form.get('career') as FormGroup<any>;
   skillArray = this.form.get('skill') as FormArray<FormGroup<SkillControl>>;
   itemArray = this.form.get('things') as FormArray<FormControl<string | null>>;
 
@@ -127,7 +134,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
 
   ngOnInit() {
     this.initForm();
-    // this.initData();
+    this.initData();
   }
 
   submit() {
@@ -135,7 +142,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
       ...this.model,
       skill: this.skillArray.value,
       weapon: this.currentWeapons.map(weapon => weapon.value),
-      thing: this.itemArray.value,
+      things: this.itemArray.value,
     };
     // this.cardToolService.createRoleCard(this.model).subscribe(res => {
     //   console.log(res);
@@ -149,16 +156,21 @@ export class CardToolEditComponent implements OnInit, OnChanges {
 
   options: FormlyFormOptions = {};
   initData() {
-    this.activatedRoute.params
-      .pipe(
-        filter(params => params.chartid),
-        map(params => params.chartid as string),
-        switchMap(chartId => this.cardToolService.detailRoleCard(chartId))
-      )
-      .subscribe(roleCard => {
-        this.options.updateInitialValue?.(roleCardToModel(roleCard));
-        this.options.resetModel?.();
-      });
+    // this.activatedRoute.params
+    //   .pipe(
+    //     filter(params => params.chartid),
+    //     map(params => params.chartid as string),
+    //     switchMap(chartId => this.cardToolService.detailRoleCard(chartId))
+    //   )
+    //   .subscribe(roleCard => {
+    //     this.options.updateInitialValue?.(roleCardToModel(roleCard));
+    //     this.options.resetModel?.();
+    //   });
+    this.dbService.getByKey<RoleCard>('characterCard', 13).subscribe(card => {
+      console.log(JSON.stringify(card));
+      this.form.patchValue(card as any);
+      this.currentWeapons = card.weapon.map(i => this.totalWeapons[i]);
+    });
   }
 
   private initForm() {
@@ -175,6 +187,9 @@ export class CardToolEditComponent implements OnInit, OnChanges {
         category: WeaponCategory[key],
         weapons: cocConfig.weapons[key],
       }));
+      this.totalWeapons = Object.keys(cocConfig.weapons).map(key => cocConfig.weapons[key]).reduce(
+        (a, b) => (a as Weapon[]).concat(b)
+      );
     });
     this.personChart = echarts.init(this.chartEle!.nativeElement);
     this.personChart.resize();

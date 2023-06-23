@@ -34,8 +34,8 @@ const dbConfig: DBConfig  = {
     store: 'characterCard',
     storeConfig: { keyPath: 'characterCardId', autoIncrement: true },
     storeSchema: [
-      { name: 'name', keypath: 'name', options: { unique: false } },
-      { name: 'job', keypath: 'job', options: { unique: false } }
+      { name: 'name', keypath: 'person.name', options: { unique: false } },
+      { name: 'job', keypath: 'person.job', options: { unique: false } }
     ]
   }]
 };
