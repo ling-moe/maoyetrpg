@@ -132,12 +132,12 @@
     </div>
 
     <h4>兴趣技能</h4>
-    <div style="height: 530px;overflow: hidden;overflow-y: scroll;">
-      <div *ngFor="let item of interestSkills(); let i = index;" formArrayName="skill">
+    <cdk-virtual-scroll-viewport itemSize="100" style="height: 530px;">
+      <div *cdkVirtualFor="let item of interestSkills(); let i = index;" formArrayName="skill">
         <ng-container [formGroupName]="i" *ngTemplateOutlet="skillLine;context:{i, item}">
         </ng-container>
       </div>
-    </div>
+    </cdk-virtual-scroll-viewport>
     <div class="row m-8 p-16">
       <div class="col-md-1"></div>
       <div class="col-md-2">
@@ -258,7 +258,7 @@
       <span class="f-s-20 text-center"
             style="width: 24px;height: 24px; line-height: normal;">{{i+1}}</span>
     </div>
-    <mat-form-field class="col-md-2 w-full">
+    <mat-form-field class="col-md-1 w-full">
       <mat-label *ngIf="!skills[item.value.num].select">技能</mat-label>
       <input *ngIf="!skills[item.value.num].select" matInput type="text" value="信用评级"
              [formControl]="item.controls.name">
@@ -291,7 +291,7 @@
       <input matInput type="text" [formControl]="item.controls.interest">
       <mat-error *ngIf="item.invalid">你的兴趣爱好还真是广泛呢？</mat-error>
     </mat-form-field>
-    <div class="col-md-2">
+    <div class="col-md-1">
       <div class="d-flex align-items-center rate-border">
         <div class="w-50 text-center">
           {{ calcRate(item,1) }}

@@ -3,6 +3,7 @@ import { SharedModule } from '@shared/shared.module';
 import { CardToolRoutingModule } from './card-tool-routing.module';
 import { CardToolEditComponent } from './edit/edit.component';
 import { CardToolListComponent } from './list/list.component';
+import {ScrollingModule} from '@angular/cdk/scrolling';
 
 const COMPONENTS: any[] = [CardToolEditComponent, CardToolListComponent];
 const COMPONENTS_DYNAMIC: any[] = [];
@@ -10,7 +11,8 @@ const COMPONENTS_DYNAMIC: any[] = [];
 @NgModule({
   imports: [
     SharedModule,
-    CardToolRoutingModule
+    CardToolRoutingModule,
+    ScrollingModule
   ],
   declarations: [
     ...COMPONENTS,
