@@ -369,9 +369,6 @@ export class CardToolEditComponent implements OnInit, OnChanges {
 
   initPersonChart() {
     this.personChart!.setOption({
-      legend: {
-        data: ['属性分布'],
-      },
       radar: {
         indicator: [
           { name: '力量', max: 100 },

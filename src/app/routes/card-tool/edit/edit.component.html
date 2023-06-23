@@ -59,7 +59,7 @@
             <mat-icon class="tips-icon" [matTooltip]="getJobSkillPoint(model?.person?.jobval)"
                       matTooltipPosition="after">help</mat-icon>:
           </div>
-          <mtx-progress [value]="(currentJobSkillPoint / totalJobSkillPoint) * 100" class="w-full">
+          <mtx-progress type="success" [value]="(currentJobSkillPoint / totalJobSkillPoint) * 100" class="w-full">
             {{ currentJobSkillPoint }}/{{ totalJobSkillPoint }}
           </mtx-progress>
         </div>
@@ -69,7 +69,7 @@
             <mat-icon class="tips-icon" matTooltip="智力x2"
                       matTooltipPosition="after">help</mat-icon>:
           </span>
-          <mtx-progress [value]="(currentInterestSkillPoint / totalInterestSkillPoint) * 100"
+          <mtx-progress type="success" [value]="(currentInterestSkillPoint / totalInterestSkillPoint) * 100"
                         class="w-full">
             {{ currentInterestSkillPoint }}/{{ totalInterestSkillPoint }}
           </mtx-progress>
@@ -245,54 +245,51 @@
     </formly-form>
   </div>
 
-  <button mat-raised-button color="primary" [disabled]="!form.valid">Submit</button>
+  <button mat-raised-button class="m-t-32" color="primary" [disabled]="!form.valid">Submit</button>
 </form>
 
 
 <ng-template let-i="i" let-item="item" #skillLine>
   <div class="row m-8 p-16">
-    <div class="col-md-1 d-flex p-b-4 justify-content-flex-start align-content-center flex-wrap">
-      <mat-icon *ngIf="!item.value.isFree">block</mat-icon>
-      <mat-icon *ngIf="item.value.bz && item.value.isFree" color="warn" class="r-full" matRipple
-                (click)="removeJobSkill(item.value.num)">delete</mat-icon>
-      <span class="f-s-20 text-center"
+    <div class="col-md-2 d-flex align-items-center">
+      <span class="p-r-32 justify-content-flex-start align-content-center flex-wrap f-s-20 text-center text-pink-400"
             style="width: 24px;height: 24px; line-height: normal;">{{i+1}}</span>
-    </div>
-    <mat-form-field class="col-md-1 w-full">
-      <mat-label *ngIf="!skills[item.value.num].select">技能</mat-label>
-      <input *ngIf="!skills[item.value.num].select" matInput type="text" value="信用评级"
-             [formControl]="item.controls.name">
+      <mat-form-field class="w-full">
+        <mat-label *ngIf="!skills[item.value.num].select">技能</mat-label>
+        <input *ngIf="!skills[item.value.num].select" matInput type="text" value="信用评级"
+               [formControl]="item.controls.name">
 
-      <mat-label *ngIf="skills[item.value.num].select">技能:
-        {{skills[item.value.num].name}}</mat-label>
-      <mat-select *ngIf="skills[item.value.num].select"
-                  (selectionChange)="iniChange($event, item, skills[item.value.num].selectValue)"
-                  [formControl]="item.controls.name">
-        <mat-option *ngFor="let item1 of jobLimitSkill(skills[item.value.num].selectValue)"
-                    [value]="item1.num">{{item1.name}}</mat-option>
-      </mat-select>
-    </mat-form-field>
-    <mat-form-field class="col-xs-1 skill-width">
+        <mat-label *ngIf="skills[item.value.num].select">技能:
+          {{skills[item.value.num].name}}</mat-label>
+        <mat-select *ngIf="skills[item.value.num].select"
+                    (selectionChange)="iniChange($event, item, skills[item.value.num].selectValue)"
+                    [formControl]="item.controls.name">
+          <mat-option *ngFor="let item1 of jobLimitSkill(skills[item.value.num].selectValue)"
+                      [value]="item1.num">{{item1.name}}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <mat-form-field class="col-md-1 skill-width">
       <mat-label>初始</mat-label>
       <input matInput type="text" [formControl]="item.controls.ini">
     </mat-form-field>
-    <mat-form-field class="col-xs-2 skill-width">
+    <mat-form-field class="col-md-2 skill-width">
       <mat-label>成长</mat-label>
       <input matInput type="text" [formControl]="item.controls.grow">
       <mat-error *ngIf="item.invalid"> 你也被魅魔吸干了？ </mat-error>
     </mat-form-field>
-    <mat-form-field class="col-xs-2 skill-width">
+    <mat-form-field class="col-md-2 skill-width">
       <mat-label>本职</mat-label>
       <input matInput type="text" [formControl]="item.controls.pro">
       <mat-error *ngIf="item.invalid"> 你也要超越极限吗？</mat-error>
     </mat-form-field>
-    <mat-form-field class="col-xs-2 skill-width">
+    <mat-form-field class="col-md-2 skill-width">
       <mat-label>兴趣</mat-label>
       <input matInput type="text" [formControl]="item.controls.interest">
       <mat-error *ngIf="item.invalid">你的兴趣爱好还真是广泛呢？</mat-error>
     </mat-form-field>
-    <div class="col-md-1">
-      <div class="d-flex align-items-center rate-border">
+    <div class="col-md-2 d-flex opt-width">
+      <div class="d-flex align-items-center rate-border w-full">
         <div class="w-50 text-center">
           {{ calcRate(item,1) }}
         </div>
@@ -305,6 +302,11 @@
           </div>
         </div>
       </div>
+    </div>
+    <div class="col-md-1 d-flex opt-width p-b-4 justify-content-center align-content-center flex-wrap">
+        <mat-icon *ngIf="!item.value.isFree">block</mat-icon>
+        <mat-icon *ngIf="item.value.bz && item.value.isFree" color="warn" class="r-full" matRipple
+                  (click)="removeJobSkill(item.value.num)">delete</mat-icon>
     </div>
   </div>
 </ng-template>

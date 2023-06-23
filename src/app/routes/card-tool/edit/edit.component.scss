@@ -81,9 +81,9 @@
   width: 18px;
   height: 20px;
 }
-// .skill-width{
-//   width: 100%;
-// }
+.opt-width{
+  width: 100%;
+}
 
 :host {
   ::ng-deep {
@@ -110,6 +110,10 @@
 
     .mat-ink-bar {
       display: none;
+    }
+
+    .mtx-progress-fill-success{
+      color: #000;
     }
   }
 }
@@ -145,6 +149,10 @@
   }
 
   .skill-width{
+    width: 50%;
+  }
+
+  .opt-width{
     width: 50%;
   }
 
