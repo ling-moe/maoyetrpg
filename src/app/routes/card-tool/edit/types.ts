@@ -12,7 +12,6 @@ export interface SkillControl {
   grow: FormControl<number | null>;
   pro: FormControl<number | null>;
   interest: FormControl<number | null>;
-  isFree: FormControl<boolean | null>;
   bz: FormControl<boolean | null>;
   freeType: FormControl<FreeSkillNum | null>;
   selectedNum: FormControl<number | null>;
@@ -72,8 +71,7 @@ export interface Skill {
   select:      boolean;
   selectValue: SkselectKey;
 
-  isFree:      boolean;
-  freeType:    string;
+  freeType:    FreeSkillNum;
   selectedNum: number | null;
 }
 

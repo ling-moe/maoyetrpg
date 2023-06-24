@@ -260,7 +260,7 @@
       <mat-select *ngIf="skills[item.value.num].select"
                   (selectionChange)="iniChange($event, item, skills[item.value.num].selectValue)"
                   [formControl]="item.controls.name">
-        <mat-option *ngFor="let item1 of jobLimitSkill(skills[item.value.num].selectValue)"
+        <mat-option *ngFor="let item1 of jobLimitSkill(item)"
                     [value]="item1.num">{{item1.name}}</mat-option>
       </mat-select>
       <mat-hint *ngIf="skills[item.value.num].select" align="end">
@@ -304,8 +304,8 @@
     </div>
     <div
          class="col-md-1 d-flex opt-width p-b-4 justify-content-center align-content-center flex-wrap">
-      <mat-icon *ngIf="!item.value.isFree">block</mat-icon>
-      <mat-icon *ngIf="item.value.bz && item.value.isFree" color="warn" class="r-full" matRipple
+      <mat-icon *ngIf="!item.value.freeType">block</mat-icon>
+      <mat-icon *ngIf="item.value.bz && item.value.freeType" color="warn" class="r-full" matRipple
                 (click)="removeJobSkill(item.value.num)">delete</mat-icon>
     </div>
   </div>
