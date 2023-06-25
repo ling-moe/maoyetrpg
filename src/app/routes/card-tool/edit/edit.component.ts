@@ -48,6 +48,7 @@ import {
   RoleCard,
   Skill,
   SkillControl,
+  SkillFormGroup,
   Skselect,
   SkselectKey,
   Weapon,
@@ -154,7 +155,6 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     });
   }
 
-  options: FormlyFormOptions = {};
   initData() {
     // this.activatedRoute.params
     //   .pipe(
@@ -166,13 +166,12 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     //     this.options.updateInitialValue?.(roleCardToModel(roleCard));
     //     this.options.resetModel?.();
     //   });
-    this.dbService.getByKey<RoleCard>('characterCard', 14).subscribe(card => {
-      console.log(JSON.stringify(card));
-      delete (card as any).skill;
-      this.form.patchValue(card as any);
-      this.currentWeapons = card.weapon.map(i => this.totalWeapons[i]);
-      card.skill.filter(i => i.freeType).forEach(i => (this.freeSkill[i.freeType]! -= 1));
-    });
+    // this.dbService.getByKey<RoleCard>('characterCard', 14).subscribe(card => {
+    //   console.log(JSON.stringify(card));
+    //   this.form.patchValue(card as any);
+    //   this.currentWeapons = card.weapon.map(i => this.totalWeapons[i]);
+    //   card.skill.filter(i => i.freeType).forEach(i => (this.freeSkill[i.freeType]! -= 1));
+    // });
   }
 
   private initForm() {
@@ -244,9 +243,11 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     return item as FormControl;
   }
 
-  iniChange(v: MatSelectChange, item: FormGroup<SkillControl>, type: SkselectKey) {
-    const skill = this.skselects[type][0].all;
-    item.patchValue({ ini: toNumber(skill[v.value].ini ?? 0), selectedNum: skill[v.value].num });
+
+  iniChange(v: MatSelectChange, item: SkillFormGroup) {
+    const skill = this.skselects[item.options][0].all;
+    this.skselects[item.options][0].all[v.value].selected = true;
+    item.patchValue({ ini: toNumber(skill[v.value].ini ?? 0) });
   }
 
   addFreeSkill(v: MatSelectChange, chooseType: FreeSkillNum) {
@@ -262,14 +263,22 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     this.skillArray.at(num).controls.pro.disable({ emitEvent: false });
   }
 
-  jobLimitSkill(item: FormGroup<SkillControl>) {
-    const type = this.skills[item.value.num!].selectValue;
+  jobLimitSkill(item: SkillFormGroup) {
+    const type = item.options;
     const skill = this.skselects[type][0].all;
-    const limitSkill = this.skselects[type][0][this.jobs[+this.model?.person?.jobval]?.job];
-    if (limitSkill) {
-      return limitSkill.map(num => skill[num.num]);
+    let options;
+    if (item.value.bz) {
+      options = (this.skselects[type][0][this.jobs[+this.model?.person?.jobval]?.job]??[]).map(
+        num => skill[num.num]
+      );
+    } else {
+      options = skill;
     }
-    return skill;
+    options = options.filter(i => !i.selected);
+    if(item.value.selectedNum !== null){
+      options.unshift(skill[item.value.selectedNum!]);
+    }
+    return options;
   }
 
   chooseSkill(chooseType: FreeSkillNum) {
@@ -300,7 +309,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     return this.skillArray.controls.filter(skill => !skill.value.bz);
   }
 
-  initSkillLine(skill: Skill): FormGroup<SkillControl> {
+  initSkillLine(skill: Skill): SkillFormGroup {
     const formGroup = this.fb.group({
       num: [toNumber(skill.num ?? 0)],
       name: [{ value: skill.name, disabled: !skill.select }],
@@ -329,14 +338,22 @@ export class CardToolEditComponent implements OnInit, OnChanges {
       bz: [skill.bz],
       freeType: <any[]>[null],
       selectedNum: <any[]>[null],
-    });
+    }) as SkillFormGroup;
     formGroup.controls.pro.valueChanges
       .pipe(startWith(null), pairwise())
       .subscribe(([_, next]) => ((formGroup.controls.pro as any).preValue = next));
     formGroup.controls.interest.valueChanges
       .pipe(startWith(null), pairwise())
       .subscribe(([_, next]) => ((formGroup.controls.interest as any).preValue = next));
-    this.form.patchValue({
+    formGroup.controls.selectedNum.valueChanges
+      .pipe(pairwise())
+      .subscribe(([pre, next]) => {
+        if(pre !== next){
+          this.skselects[formGroup.options][0].all[pre!].selected = false;
+        }
+      });
+
+    this.attributeForm.patchValue({
       mov: calcMov(
         toNumber(this.model.attribute.str ?? 0),
         toNumber(this.model.attribute.dex ?? 0),
@@ -344,6 +361,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
         toNumber(this.model.attribute.age ?? 0)
       ),
     });
+    formGroup.options = skill.selectValue;
     return formGroup;
   }
 
@@ -428,7 +446,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
   }
 
   randomProps() {
-    this.form.patchValue(
+    this.attributeForm.patchValue(
       zipObject(
         ['str', 'con', 'pow', 'dex', 'app', 'siz', 'int', 'edu'],
         shuffle([40, 50, 50, 50, 60, 60, 70, 80])
@@ -512,7 +530,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
               field.options?.fieldChanges
                 ?.pipe(filter(e => e.field === field && e.value !== null))
                 .subscribe(e => {
-                  this.form.patchValue({
+                  this.attributeForm.patchValue({
                     mov: calcMov(
                       toNumber(this.model.attribute.str ?? 0),
                       toNumber(this.model.attribute.dex ?? 0),
@@ -616,16 +634,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
         onInit: (field: FormlyFieldConfig) => {
           field.options?.fieldChanges?.subscribe(e => {
             const { str, con, pow, dex, app, siz, int, edu } = this.model.attribute;
-            this.updatePersonChart([
-              toNumber(str ?? 0),
-              toNumber(con ?? 0),
-              toNumber(pow ?? 0),
-              toNumber(dex ?? 0),
-              toNumber(app ?? 0),
-              toNumber(siz ?? 0),
-              toNumber(int ?? 0),
-              toNumber(edu ?? 0),
-            ]);
+            this.updatePersonChart([str, con, pow, dex, app, siz, int, edu]);
           });
         },
       },
@@ -635,6 +644,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
           key: 'str',
           type: 'input',
           props: {
+            type: 'number',
             label: '力量',
             required: true,
           },
@@ -643,7 +653,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
               field.options?.fieldChanges
                 ?.pipe(filter(e => e.field === field && e.value !== null))
                 .subscribe(e => {
-                  this.form.patchValue({
+                  this.attributeForm.patchValue({
                     mov: calcMov(
                       toNumber(this.model.attribute.str ?? 0),
                       toNumber(this.model.attribute.dex ?? 0),
@@ -664,6 +674,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
           key: 'con',
           type: 'input',
           props: {
+            type: 'number',
             label: '体质',
             required: true,
           },
@@ -689,6 +700,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
           key: 'siz',
           type: 'input',
           props: {
+            type: 'number',
             label: '体型',
             required: true,
           },
@@ -702,7 +714,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
                       toNumber(this.model.attribute.siz ?? 0)) /
                       10
                   );
-                  this.form.patchValue({
+                  this.attributeForm.patchValue({
                     hp: `${t}/${t}`,
                     mov: calcMov(
                       toNumber(this.model.attribute.str ?? 0),
@@ -724,6 +736,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
           key: 'dex',
           type: 'input',
           props: {
+            type: 'number',
             label: '敏捷',
             required: true,
           },
@@ -732,7 +745,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
               field.options?.fieldChanges
                 ?.pipe(filter(e => e.field === field && e.value !== null))
                 .subscribe(e => {
-                  this.form.patchValue({
+                  this.attributeForm.patchValue({
                     mov: calcMov(
                       toNumber(this.model.attribute.str ?? 0),
                       toNumber(this.model.attribute.dex ?? 0),
@@ -749,6 +762,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
           key: 'app',
           type: 'input',
           props: {
+            type: 'number',
             label: '外貌',
             required: true,
           },
@@ -758,6 +772,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
           key: 'int',
           type: 'input',
           props: {
+            type: 'number',
             label: '智力',
             required: true,
           },
@@ -767,6 +782,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
           key: 'pow',
           type: 'input',
           props: {
+            type: 'number',
             label: '意志',
             required: true,
           },
@@ -776,7 +792,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
                 ?.pipe(filter(e => e.field === field && e.value !== null))
                 .subscribe(e => {
                   const t = calcMP(toNumber(e.value ?? 0));
-                  this.form.patchValue({
+                  this.attributeForm.patchValue({
                     mp: `${t}/${t}`,
                     san: `${calcSan(toNumber(e.value ?? 0))}/99`,
                   });
@@ -789,6 +805,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
           key: 'edu',
           type: 'input',
           props: {
+            type: 'number',
             label: '教育',
             required: true,
           },
@@ -798,6 +815,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
           key: 'luck',
           type: 'input',
           props: {
+            type: 'number',
             label: '幸运',
           },
         },

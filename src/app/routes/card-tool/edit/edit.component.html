@@ -4,14 +4,14 @@
     <div class="d-flex flex-wrap">
       <file-upload (avatorUrl)="modifyAvatar($event)" class="file-upload"></file-upload>
       <formly-form [model]="model.person" [fields]="personInfoFields" [form]="personForm"
-                   [options]="options" class="p-y-24 info-fields">
+                   class="p-y-24 info-fields">
       </formly-form>
     </div>
   </div>
   <mat-divider class="m-y-16"></mat-divider>
   <div class="p-x-24 p-y-8 mat-elevation-z8">
     <h3>故事背景</h3>
-    <formly-form [model]="model.story" [fields]="storyFields" [form]="storyForm" [options]="options">
+    <formly-form [model]="model.story" [fields]="storyFields" [form]="storyForm">
     </formly-form>
   </div>
   <mat-divider class="m-y-16"></mat-divider>
@@ -22,14 +22,12 @@
       <div class="props-wrap flex-wrap">
         <div class="props-form flex-wrap">
           <div class="base-props-fields">
-            <formly-form [model]="model.attribute" [fields]="personBaseFields" [form]="attributeForm"
-                         [options]="options">
+            <formly-form [model]="model.attribute" [fields]="personBaseFields" [form]="attributeForm">
             </formly-form>
           </div>
           <mat-icon class="props-icon">double_arrow</mat-icon>
           <div class="advance-props-fields">
-            <formly-form [model]="model.attribute" [fields]="personAdvanceFields" [form]="attributeForm"
-                         [options]="options">
+            <formly-form [model]="model.attribute" [fields]="personAdvanceFields" [form]="attributeForm">
             </formly-form>
           </div>
         </div>
@@ -238,14 +236,13 @@
         生活水平：{{live()}}
       </div>
     </div>
-    <formly-form [model]="model.assets" [fields]="assetsFields" [form]="assetsForm" [options]="options">
+    <formly-form [model]="model.assets" [fields]="assetsFields" [form]="assetsForm">
     </formly-form>
   </div>
   <mat-divider class="m-y-16"></mat-divider>
   <div class="p-x-24 p-y-8 mat-elevation-z8">
     <h3>生涯</h3>
-    <formly-form [model]="model.career" [fields]="careerFields" [form]="careerForm"
-                 [options]="options">
+    <formly-form [model]="model.career" [fields]="careerFields" [form]="careerForm">
     </formly-form>
   </div>
 
@@ -254,17 +251,17 @@
 <ng-template let-i="i" let-item="item" #skillLine>
   <div class="row m-8 p-16">
     <mat-form-field class="col-md-2">
-      <input *ngIf="!skills[item.value.num].select" matInput type="text" value="信用评级"
+      <input *ngIf="item.options === ''" matInput type="text" value="信用评级"
              [formControl]="item.controls.name">
 
-      <mat-select *ngIf="skills[item.value.num].select"
-                  (selectionChange)="iniChange($event, item, skills[item.value.num].selectValue)"
-                  [formControl]="item.controls.name">
+      <mat-select *ngIf="item.options !== ''"
+                  (selectionChange)="iniChange($event, item)"
+                  [formControl]="item.controls.selectedNum">
         <mat-option *ngFor="let item1 of jobLimitSkill(item)"
                     [value]="item1.num">{{item1.name}}</mat-option>
       </mat-select>
-      <mat-hint *ngIf="skills[item.value.num].select" align="end">
-        <strong>{{skills[item.value.num].name}}</strong>
+      <mat-hint *ngIf="item.options !== ''" align="end">
+        <strong>{{item.value.name}}</strong>
       </mat-hint>
       <span matPrefix class="p-r-32 f-s-20 text-pink-400">{{i+1}}</span>
     </mat-form-field>

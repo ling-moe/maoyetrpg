@@ -1,10 +1,12 @@
-import { FormControl } from '@angular/forms';
+import { FormControl, FormGroup } from '@angular/forms';
 
 export interface PageRequest{
   page: number;
   nextpage: number;
   pagesize: number;
 }
+
+export type SkillFormGroup = FormGroup<SkillControl> & {options: SkselectKey};
 export interface SkillControl {
   num: FormControl<number | null>;
   name: FormControl<string | null>;
@@ -72,7 +74,8 @@ export interface Skill {
   selectValue: SkselectKey;
 
   freeType:    FreeSkillNum;
-  selectedNum: number | null;
+  selectedNum?: number;
+  selected?: boolean;
 }
 
 export enum Type {
