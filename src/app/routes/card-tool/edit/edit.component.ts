@@ -166,12 +166,12 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     //     this.options.updateInitialValue?.(roleCardToModel(roleCard));
     //     this.options.resetModel?.();
     //   });
-    // this.dbService.getByKey<RoleCard>('characterCard', 14).subscribe(card => {
-    //   console.log(JSON.stringify(card));
-    //   this.form.patchValue(card as any);
-    //   this.currentWeapons = card.weapon.map(i => this.totalWeapons[i]);
-    //   card.skill.filter(i => i.freeType).forEach(i => (this.freeSkill[i.freeType]! -= 1));
-    // });
+    this.dbService.getByKey<RoleCard>('characterCard', 15).subscribe(card => {
+      console.log(JSON.stringify(card));
+      this.form.patchValue(card as any);
+      this.currentWeapons = card.weapon.map(i => this.totalWeapons[i]);
+      card.skill.filter(i => i.freeType).forEach(i => (this.freeSkill[i.freeType]! -= 1));
+    });
   }
 
   private initForm() {
@@ -246,7 +246,6 @@ export class CardToolEditComponent implements OnInit, OnChanges {
 
   iniChange(v: MatSelectChange, item: SkillFormGroup) {
     const skill = this.skselects[item.options][0].all;
-    this.skselects[item.options][0].all[v.value].selected = true;
     item.patchValue({ ini: toNumber(skill[v.value].ini ?? 0) });
   }
 
@@ -266,9 +265,10 @@ export class CardToolEditComponent implements OnInit, OnChanges {
   jobLimitSkill(item: SkillFormGroup) {
     const type = item.options;
     const skill = this.skselects[type][0].all;
+    const curJob = this.jobs[+this.model?.person?.jobval]?.job;
     let options;
-    if (item.value.bz) {
-      options = (this.skselects[type][0][this.jobs[+this.model?.person?.jobval]?.job]??[]).map(
+    if (item.value.bz && this.skselects[type][0][curJob]) {
+      options = (this.skselects[type][0][curJob]).map(
         num => skill[num.num]
       );
     } else {
@@ -346,10 +346,13 @@ export class CardToolEditComponent implements OnInit, OnChanges {
       .pipe(startWith(null), pairwise())
       .subscribe(([_, next]) => ((formGroup.controls.interest as any).preValue = next));
     formGroup.controls.selectedNum.valueChanges
-      .pipe(pairwise())
+    .pipe(startWith(null), pairwise())
       .subscribe(([pre, next]) => {
-        if(pre !== next){
-          this.skselects[formGroup.options][0].all[pre!].selected = false;
+        if(pre != null && pre !== next){
+          this.skselects[formGroup.options][0].all[pre].selected = false;
+        }
+        if(next != null){
+          this.skselects[formGroup.options][0].all[next].selected = true;
         }
       });
 
