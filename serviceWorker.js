@@ -1,4 +1,6 @@
 const cacheUrl = [__REPLACE_WITH_JSON_ARRAY__'/'];
+const pattern = /^(?!.*\.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?|ttf|eot)$).*$/;
+var currentDomain = self.location.hostname;
 
 /* 监听安装事件，install 事件一般是被用来设置你的浏览器的离线缓存逻辑 */
 this.addEventListener('install', function (event) {
@@ -14,7 +16,7 @@ this.addEventListener('install', function (event) {
 
 self.addEventListener('fetch', function (event) {
   console.log('Handling fetch event for', event.request.url);
-  cacheUrl.some(url => event.request.url.includes(url)) &&
+  cacheUrl.some(url => event.request.url === (currentDomain + '/' + url) && pattern.test(event.request.url)) &&
     event.respondWith(
       // 打开以'font'开头的 Cache 对象。
       caches.open('v1').then(function (cache) {
