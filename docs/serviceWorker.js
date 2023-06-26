@@ -8,6 +8,12 @@ this.addEventListener('install', function (event) {
   event.waitUntil(
     /* 创建一个名叫V1的缓存版本 */
     caches.open('v1').then(function (cache) {
+      // 遇到升级，清空缓存重新加载
+      cache.keys().then(function(keys) {
+        keys.forEach(function(request) {
+          cache.delete(request);
+        });
+      });
       /* 指定要缓存的内容，地址为相对于跟域名的访问路径 */
       return cache.addAll(cacheUrl);
     })
@@ -19,11 +25,6 @@ self.addEventListener('fetch', function (event) {
   cacheUrl.some(url => event.request.url === (currentDomain + '/' + url) && pattern.test(event.request.url)) &&
     event.respondWith(
       caches.open('v1').then(function (cache) {
-        // 遇到升级，清空缓存重新加载
-        cache.keys().then(function(keys) {
-          keys.forEach(function(request) {
-            cache.delete(request);
-          });
         return cache
           .match(event.request)
           .then(function (response) {
