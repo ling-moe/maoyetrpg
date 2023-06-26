@@ -22,7 +22,7 @@ this.addEventListener('install', function (event) {
 
 self.addEventListener('fetch', function (event) {
   console.log('Handling fetch event for', event.request.url);
-  cacheUrl.some(url => event.request.url === (currentDomain + '/' + url) && pattern.test(event.request.url)) &&
+  cacheUrl.some(url => event.request.url === (currentDomain + '/' + url) || pattern.test(event.request.url)) &&
     event.respondWith(
       caches.open('v1').then(function (cache) {
         return cache
