@@ -2536,24 +2536,6 @@
       "type": "知识",
       "select": false,
       "selectValue": ""
-    },
-    {
-      "ini": 0,
-      "introduce": "自定义技能",
-      "name": "",
-      "num": 65,
-      "type": "自定义",
-      "select": false,
-      "selectValue": ""
-    },
-    {
-      "ini": 0,
-      "introduce": "自定义技能",
-      "name": "",
-      "num": 66,
-      "type": "自定义",
-      "select": false,
-      "selectValue": ""
     }
   ],
   "skselect": {

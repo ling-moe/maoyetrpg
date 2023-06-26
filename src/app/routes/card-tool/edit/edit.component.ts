@@ -23,7 +23,7 @@ import { ActivatedRoute } from '@angular/router';
 import { TokenService, User } from '@core';
 import { FormlyFieldConfig } from '@ngx-formly/core';
 import { EChartsType } from 'echarts/core';
-import { maxBy, shuffle, sumBy, toNumber, zipObject } from 'lodash';
+import { maxBy, shuffle, sumBy, zipObject } from 'lodash';
 import { NgxIndexedDBService } from 'ngx-indexed-db';
 import { filter, map, pairwise, startWith, switchMap, tap } from 'rxjs/operators';
 import { CardToolService } from '../card-tool.service';
@@ -31,13 +31,15 @@ import {
   Time,
   WeaponCategory,
   calcCashLevel,
-  calcCredit,
+  calcTotal,
   calcDbAndBuild,
   calcMP,
   calcMov,
   calcSan,
   liveLevel,
   roleCardToModel,
+  calcRate,
+  calcHP,
 } from './coc-util';
 import { echarts } from './echart.config';
 import {
@@ -166,11 +168,11 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     //     this.options.updateInitialValue?.(roleCardToModel(roleCard));
     //     this.options.resetModel?.();
     //   });
-    this.dbService.getByKey<RoleCard>('characterCard', 18).subscribe(card => {
-      this.form.patchValue(card);
-      this.currentWeapons = card.weapon.map(i => this.totalWeapons[i]);
-      card.skill.filter(i => i.freeType).forEach(i => (this.freeSkill[i.freeType]! -= 1));
-    });
+    // this.dbService.getByKey<RoleCard>('characterCard', 18).subscribe(card => {
+    //   this.form.patchValue(card);
+    //   this.currentWeapons = card.weapon.map(i => this.totalWeapons[i]);
+    //   card.skill.filter(i => i.freeType).forEach(i => (this.freeSkill[i.freeType]! -= 1));
+    // });
   }
 
   private initForm() {
@@ -202,33 +204,21 @@ export class CardToolEditComponent implements OnInit, OnChanges {
 
   private subcribeSkillPoint() {
     this.skillArray.valueChanges.subscribe(val => {
-      this.currentJobSkillPoint = sumBy(val, 'pro');
-      this.currentInterestSkillPoint = sumBy(val, 'interest');
+      this.currentJobSkillPoint = sumBy(val, v => v.pro??0);
+      this.currentInterestSkillPoint = sumBy(val, v => v.interest??0);
     });
   }
 
   credit() {
-    const obj = this.form.getRawValue().skill[0];
+    const obj = this.skillArray.at(0)?.getRawValue();
     if (!obj) return;
-    return calcCredit(
-      toNumber(obj.ini ?? 0),
-      toNumber(obj.grow ?? 0),
-      toNumber(obj.pro ?? 0),
-      toNumber(obj.interest ?? 0)
-    );
+    return calcTotal(obj);
   }
 
   live() {
-    const obj = this.form.getRawValue().skill[0];
+    const obj = this.skillArray.at(0)?.getRawValue();
     if (!obj) return;
-    return liveLevel(
-      calcCredit(
-        toNumber(obj.ini ?? 0),
-        toNumber(obj.grow ?? 0),
-        toNumber(obj.pro ?? 0),
-        toNumber(obj.interest ?? 0)
-      )
-    );
+    return liveLevel(calcTotal(obj));
   }
 
   addItem() {
@@ -240,7 +230,9 @@ export class CardToolEditComponent implements OnInit, OnChanges {
 
   iniChange(v: MatSelectChange, item: SkillFormGroup) {
     const skill = this.skselects[item.options].all;
-    item.patchValue({ ini: toNumber(skill[v.value].ini ?? 0) });
+    if(skill[v.value].ini){
+      item.patchValue({ ini: skill[v.value].ini });
+    }
   }
 
   addFreeSkill(v: MatSelectChange, chooseType: FreeSkillNum) {
@@ -303,7 +295,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     const formGroup = this.fb.group({
       num: [skill.num],
       name: [{ value: skill.name, disabled: !skill.select }],
-      ini: [{ value: toNumber(skill.ini ?? 0), disabled: true }],
+      ini: [{ value: skill.ini, disabled: true }],
       grow: [skill.grow, Validators.min(0)],
       pro: [
         { value: skill.pro, disabled: true },
@@ -352,12 +344,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     );
 
     this.attributeForm.patchValue({
-      mov: calcMov(
-        toNumber(this.model.attribute.str ?? 0),
-        toNumber(this.model.attribute.dex ?? 0),
-        toNumber(this.model.attribute.siz ?? 0),
-        toNumber(this.model.attribute.age ?? 0)
-      ),
+      mov: calcMov({ ...this.model.attribute, age: this.model.person.age }),
     });
     formGroup.options = skill.selectValue;
     return formGroup;
@@ -365,13 +352,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
 
   calcRate(item: FormGroup<SkillControl>, sub: number) {
     const skill = item.getRawValue();
-    const rate = Math.floor(
-      (toNumber(skill.ini ?? 0) +
-        toNumber(skill.grow ?? 0) +
-        toNumber(skill.pro ?? 0) +
-        toNumber(skill.interest ?? 0)) /
-        sub
-    );
+    const rate = calcRate(skill, sub);
     if (skill.name === '信用评级') {
       this.form.patchValue(calcCashLevel(rate), {
         emitEvent: false,
@@ -454,7 +435,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
 
   get propsTotal() {
     return ['str', 'con', 'pow', 'dex', 'app', 'siz', 'int', 'edu'].reduce(
-      (total, key) => total + toNumber(this.model.attribute[key] ?? 0),
+      (total, key) => total + (this.model.attribute[key] ?? 0),
       0
     );
   }
@@ -469,13 +450,13 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     const job = this.jobs[+this.model.person.jobval];
     const formula = job?.pro;
     return formula?.reduce((total, item) => {
-      const maxItem = maxBy(item, i => toNumber(this.model.attribute[i.name] ?? 0));
-      return total + toNumber(this.model.attribute[maxItem!.name] ?? 0) * maxItem!.num;
+      const maxItem = maxBy(item, i => this.model.attribute[i.name] ?? 0);
+      return total + this.model.attribute[maxItem!.name] * maxItem!.num;
     }, 0);
   }
 
   get totalInterestSkillPoint(): number {
-    return toNumber(this.model.attribute.int ?? 0) * 2;
+    return (this.model.attribute.int ?? 0) * 2;
   }
 
   personInfoFields: FormlyFieldConfig[] = [
@@ -516,8 +497,8 @@ export class CardToolEditComponent implements OnInit, OnChanges {
         },
         {
           className: 'col-md-6',
-          key: 'ages',
-          type: 'input',
+          key: 'age',
+          type: 'number',
           props: {
             label: '年龄',
             placeholder: '您贵庚？',
@@ -529,12 +510,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
                 ?.pipe(filter(e => e.field === field && e.value !== null))
                 .subscribe(e => {
                   this.attributeForm.patchValue({
-                    mov: calcMov(
-                      toNumber(this.model.attribute.str ?? 0),
-                      toNumber(this.model.attribute.dex ?? 0),
-                      toNumber(this.model.attribute.siz ?? 0),
-                      toNumber(this.model.attribute.age ?? 0)
-                    ),
+                    mov: calcMov({ ...this.model.attribute, age: this.model.person.age }),
                   });
                 });
             },
@@ -564,12 +540,11 @@ export class CardToolEditComponent implements OnInit, OnChanges {
                   this.freeSkill = {};
                   this.skillArray.controls.forEach(control => {
                     control.patchValue(
-                      { bz: false, pro: 0, selectedNum: null },
-                      { emitEvent: false }
+                      { bz: false, pro: 0, selectedNum: null }
                     );
                   });
                   curJob.skills.forEach(skillNum => {
-                    this.skillArray.at(skillNum).patchValue({ bz: true }, { emitEvent: false });
+                    this.skillArray.at(skillNum).patchValue({ bz: true });
                   });
                   // 记录剩余可选技能数量
                   if (curJob.fouroTwo.length !== 0) {
@@ -651,16 +626,8 @@ export class CardToolEditComponent implements OnInit, OnChanges {
                 ?.pipe(filter(e => e.field === field && e.value !== null))
                 .subscribe(e => {
                   this.attributeForm.patchValue({
-                    mov: calcMov(
-                      toNumber(this.model.attribute.str ?? 0),
-                      toNumber(this.model.attribute.dex ?? 0),
-                      toNumber(this.model.attribute.siz ?? 0),
-                      toNumber(this.model.attribute.age ?? 0)
-                    ),
-                    ...calcDbAndBuild(
-                      toNumber(this.model.attribute.str ?? 0),
-                      toNumber(this.model.attribute.siz ?? 0)
-                    ),
+                    mov: calcMov({ ...this.model.attribute, age: this.model.person.age }),
+                    ...calcDbAndBuild(this.model.attribute),
                   });
                 });
             },
@@ -681,11 +648,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
               field.options?.fieldChanges
                 ?.pipe(filter(e => e.field === field && e.value !== null))
                 .subscribe(() => {
-                  const t = Math.round(
-                    (toNumber(this.model.attribute.con ?? 0) +
-                      toNumber(this.model.attribute.siz ?? 0)) /
-                      10
-                  );
+                  const t = calcHP(this.model.attribute);
                   this.form.patchValue({
                     hp: `${t}/${t}`,
                   });
@@ -708,23 +671,11 @@ export class CardToolEditComponent implements OnInit, OnChanges {
               field.options?.fieldChanges
                 ?.pipe(filter(e => e.field === field && e.value !== null))
                 .subscribe(e => {
-                  const t = Math.round(
-                    (toNumber(this.model.attribute.con ?? 0) +
-                      toNumber(this.model.attribute.siz ?? 0)) /
-                      10
-                  );
+                  const t = calcHP(this.model.attribute);
                   this.attributeForm.patchValue({
                     hp: `${t}/${t}`,
-                    mov: calcMov(
-                      toNumber(this.model.attribute.str ?? 0),
-                      toNumber(this.model.attribute.dex ?? 0),
-                      toNumber(this.model.attribute.siz ?? 0),
-                      toNumber(this.model.attribute.age ?? 0)
-                    ),
-                    ...calcDbAndBuild(
-                      toNumber(this.model.attribute.str ?? 0),
-                      toNumber(this.model.attribute.siz ?? 0)
-                    ),
+                    mov: calcMov({ ...this.model.attribute, age: this.model.person.age }),
+                    ...calcDbAndBuild(this.model.attribute),
                   });
                 });
             },
@@ -746,12 +697,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
                 ?.pipe(filter(e => e.field === field && e.value !== null))
                 .subscribe(e => {
                   this.attributeForm.patchValue({
-                    mov: calcMov(
-                      toNumber(this.model.attribute.str ?? 0),
-                      toNumber(this.model.attribute.dex ?? 0),
-                      toNumber(this.model.attribute.siz ?? 0),
-                      toNumber(this.model.attribute.age ?? 0)
-                    ),
+                    mov: calcMov({ ...this.model.attribute, age: this.model.person.age }),
                   });
                 });
             },
@@ -794,10 +740,10 @@ export class CardToolEditComponent implements OnInit, OnChanges {
               field.options?.fieldChanges
                 ?.pipe(filter(e => e.field === field && e.value !== null))
                 .subscribe(e => {
-                  const t = calcMP(toNumber(e.value ?? 0));
+                  const t = calcMP(e.value ?? 0);
                   this.attributeForm.patchValue({
                     mp: `${t}/${t}`,
-                    san: `${calcSan(toNumber(e.value ?? 0))}/99`,
+                    san: `${calcSan(e.value ?? 0)}/99`,
                   });
                 });
             },
@@ -1105,7 +1051,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
 function requiredDynamicMax(max: () => number, cur: () => number): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const v = Number(control.value);
-    const preValue = toNumber(((control as any) ?? 0).preValue);
+    const preValue = ((control as any) ?? 0).preValue;
     if (v > preValue + (max() - cur())) {
       return { max: { max: preValue + (max() - cur()), actual: control.value } };
     }

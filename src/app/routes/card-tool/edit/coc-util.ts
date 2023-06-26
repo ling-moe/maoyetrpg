@@ -1,5 +1,5 @@
 import { toNumber } from 'lodash';
-import { BzElement, CocConfig, RoleCard } from './types';
+import { BaseAttribute, CocConfig, RoleCard, SkillValue } from './types';
 export const WeaponCategory: { [key: string]: string } = {
   cg: '常规武器',
   sq: '手枪',
@@ -52,8 +52,15 @@ export function calcCashLevel(assets: number) {
   return { cash, level };
 }
 
-export function calcDbAndBuild(str: number, siz: number) {
-  const t = str + siz;
+export function calcHP(attr: BaseAttribute) {
+  const con = attr.con ?? 0,
+    siz = attr.siz ?? 0;
+  return Math.round((con + siz) / 10);
+}
+
+export function calcDbAndBuild(attr: BaseAttribute) {
+  const { str, siz } = attr;
+  const t = (str ?? 0) + (siz ?? 0);
   if (t >= 2 && t <= 64) {
     return { db: '-2', build: -2 };
   } else if (t >= 65 && t <= 84) {
@@ -69,7 +76,11 @@ export function calcDbAndBuild(str: number, siz: number) {
   }
 }
 
-export function calcMov(str: number, dex: number, siz: number, age: number): number {
+export function calcMov(attr: BaseAttribute & { age?: number }): number {
+  const str = attr.str ?? 0,
+    dex = attr.dex ?? 0,
+    siz = attr.siz ?? 0,
+    age = attr.age ?? 0;
   let mov = 8;
   if (str < siz && dex < siz) {
     mov = 7;
@@ -78,7 +89,9 @@ export function calcMov(str: number, dex: number, siz: number, age: number): num
   } else {
     mov = 8;
   }
-  if (age > 40 && age <= 49) {
+  if (age < 40) {
+    mov -= 0;
+  } else if (age > 40 && age <= 49) {
     mov -= 1;
   } else if (age > 50 && age <= 59) {
     mov -= 2;
@@ -87,6 +100,8 @@ export function calcMov(str: number, dex: number, siz: number, age: number): num
   } else if (age > 70 && age <= 79) {
     mov -= 4;
   } else if (age > 80 && age <= 89) {
+    mov -= 5;
+  } else {
     mov -= 5;
   }
   return mov;
@@ -116,8 +131,13 @@ export function calcSan(pow: number) {
   return pow;
 }
 
-export function calcCredit(ini: number, grow: number, pro: number, interest: number) {
-  return ini + grow + pro + interest;
+export function calcTotal(attr: SkillValue) {
+  const { ini, grow, pro, interest } = attr;
+  return ini + (grow ?? 0) + (pro ?? 0) + (interest ?? 0);
+}
+
+export function calcRate(attr: SkillValue, sub: number) {
+  return Math.floor(calcTotal(attr) / sub);
 }
 
 export function modelToRoleCard(model: any, config: CocConfig): RoleCard {
