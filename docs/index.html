@@ -76,13 +76,13 @@
           window.addEventListener('load', function () {
               /* 创建并指定对应的执行内容 */
               /* scope 参数是可选的，可以用来指定你想让 service worker 控制的内容的子目录。 在这个例子里，我们指定了 '/'，表示 根网域下的所有内容。这也是默认值。 */
-              // navigator.serviceWorker.register('./serviceWorker.js', {scope: './'})
-              //     .then(function (registration) {
-              //         console.log('ServiceWorker registration successful with scope: ', registration.scope);
-              //     })
-              //     .catch(function (err) {
-              //         console.log('ServiceWorker registration failed: ', err);
-              //     });
+              navigator.serviceWorker.register('./serviceWorker.js', {scope: './'})
+                  .then(function (registration) {
+                      console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                  })
+                  .catch(function (err) {
+                      console.log('ServiceWorker registration failed: ', err);
+                  });
           });
       }
   </script>
@@ -90,6 +90,6 @@
 <body>
   <app-root></app-root>
   <div id="globalLoader" class="global-loader"><h1>LOADING</h1></div>
-<script src="runtime.cd95186c459ce3d0.js" type="module"></script><script src="polyfills.a68c3e8c4e8265c3.js" type="module"></script><script src="main.a08d98b7bbe23ae6.js" type="module"></script>
+<script src="runtime.0d5b12b5b946864d.js" type="module"></script><script src="polyfills.a68c3e8c4e8265c3.js" type="module"></script><script src="main.a08d98b7bbe23ae6.js" type="module"></script>
 
 </body></html>
