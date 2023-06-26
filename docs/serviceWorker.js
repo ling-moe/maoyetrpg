@@ -18,8 +18,12 @@ self.addEventListener('fetch', function (event) {
   console.log('Handling fetch event for', event.request.url);
   cacheUrl.some(url => event.request.url === (currentDomain + '/' + url) && pattern.test(event.request.url)) &&
     event.respondWith(
-      // 打开以'font'开头的 Cache 对象。
       caches.open('v1').then(function (cache) {
+        // 遇到升级，清空缓存重新加载
+        cache.keys().then(function(keys) {
+          keys.forEach(function(request) {
+            cache.delete(request);
+          });
         return cache
           .match(event.request)
           .then(function (response) {
