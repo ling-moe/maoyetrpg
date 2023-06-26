@@ -1,6 +1,6 @@
 const cacheUrl = [__REPLACE_WITH_JSON_ARRAY__'/'];
 const pattern = /^(?!.*\.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?|ttf|eot)$).*$/;
-var currentDomain = self.location.hostname;
+var currentDomain = self.location.origin;
 
 /* 监听安装事件，install 事件一般是被用来设置你的浏览器的离线缓存逻辑 */
 this.addEventListener('install', function (event) {
