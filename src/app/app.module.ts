@@ -31,8 +31,8 @@ const dbConfig: DBConfig  = {
   name: 'trpg',
   version: 1,
   objectStoresMeta: [{
-    store: 'characterCard',
-    storeConfig: { keyPath: 'characterCardId', autoIncrement: true },
+    store: 'RoleCards',
+    storeConfig: { keyPath: 'roleCardId', autoIncrement: true },
     storeSchema: [
       { name: 'name', keypath: 'person.name', options: { unique: false } },
       { name: 'job', keypath: 'person.job', options: { unique: false } }

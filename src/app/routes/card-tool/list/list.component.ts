@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 import { RoleCard } from '../edit/types';
 import { Router } from '@angular/router';
+import { NgxIndexedDBService } from 'ngx-indexed-db';
 
 @Component({
   selector: 'app-card-tool-list',
@@ -20,23 +21,14 @@ export class CardToolListComponent implements OnInit {
 
   constructor(
     private cardToolService: CardToolService,
-    private router: Router
+    private router: Router,
+    private dbService: NgxIndexedDBService
     ) {}
 
   ngOnInit() {
-    this.cardToolService.listRoleCard({
-      page: this.paginator.page,
-      nextpage: 1,
-      pagesize: this.paginator.pagesize,
-    }).subscribe(roleCards => {
-      console.log(roleCards);
-
+    this.dbService.getAll<RoleCard>('RoleCards').subscribe(roleCards => {
       this.roleCards = roleCards;
     });
-  }
-
-  togglePage(event: PageEvent) {
-    console.log(event);
   }
 
 }

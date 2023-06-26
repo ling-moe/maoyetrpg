@@ -1,8 +1,17 @@
-<form [formGroup]="form" (ngSubmit)="submit()" autocomplete="off">
+<div class="d-flex align-items-center">
+  <button mat-mini-fab [routerLink]="['../']" color="default" aria-label="后退">
+    <mat-icon>arrow_back</mat-icon>
+  </button>
+  <h1 class="p-l-16">角色详情</h1>
+  <span class="toolbar-spacer"></span>
+  <button mat-raised-button class="m-x-4" color="warn" [disabled]="roleCardId === null" (click)="remove()">删除</button>
+  <button mat-raised-button class="m-x-4" type="button" color="primary" [disabled]="!form.valid" (click)="submit()">保存</button>
+</div>
+<form [formGroup]="form" autocomplete="off">
   <div class="p-x-24 p-y-8 mat-elevation-z8">
     <h3>人物信息</h3>
     <div class="d-flex flex-wrap">
-      <file-upload (avatorUrl)="modifyAvatar($event)" class="file-upload"></file-upload>
+      <avatar [avatar]="model.person.avatar" (avatarUrl)="modifyAvatar($event)" class="file-upload"></avatar>
       <formly-form [model]="model.person" [fields]="personInfoFields" [form]="personForm"
                    class="p-y-24 info-fields">
       </formly-form>
@@ -245,8 +254,6 @@
     <formly-form [model]="model.career" [fields]="careerFields" [form]="careerForm">
     </formly-form>
   </div>
-
-  <button mat-raised-button class="m-t-32" color="primary" [disabled]="!form.valid">Submit</button>
 </form>
 <ng-template let-i="i" let-item="item" #skillLine>
   <div class="row m-8 p-16">

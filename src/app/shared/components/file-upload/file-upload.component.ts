@@ -1,11 +1,11 @@
-import { Component, OnInit, ElementRef, ViewChild, Output, EventEmitter, OnDestroy } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, Output, EventEmitter, OnDestroy, Input } from '@angular/core';
 import Cos from '@shared/cos';
 import Uppy from '@uppy/core';
 import Dashboard from '@uppy/dashboard';
 import ImageEditor from '@uppy/image-editor';
 
 @Component({
-  selector: 'file-upload',
+  selector: 'avatar',
   templateUrl: './file-upload.component.html',
   styleUrls: ['./file-upload.component.scss'],
 })
@@ -15,8 +15,9 @@ export class FileUploadComponent implements OnInit, OnDestroy {
    fileUpload!: ElementRef;
 
    @Output()
-   avatorUrl = new EventEmitter<string>();
+   avatarUrl = new EventEmitter<string>();
    uppy?: Uppy;
+   @Input()
    avatar?: string;
 
    constructor() {}
@@ -33,7 +34,7 @@ export class FileUploadComponent implements OnInit, OnDestroy {
   })
     .on('upload-success', (file, response) => {
       this.avatar = `https://${response.uploadURL}`;
-      this.avatorUrl.emit(this.avatar);
+      this.avatarUrl.emit(this.avatar);
       (this.uppy!.getPlugin('Dashboard') as any).closeModal();
     });
    }
@@ -43,7 +44,7 @@ export class FileUploadComponent implements OnInit, OnDestroy {
    }
 
    ngOnDestroy(): void {
-    this.avatorUrl.complete();
+    this.avatarUrl.complete();
   }
 }
 

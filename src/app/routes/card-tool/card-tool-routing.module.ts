@@ -4,10 +4,9 @@ import { CardToolEditComponent } from './edit/edit.component';
 import { CardToolListComponent } from './list/list.component';
 
 const routes: Routes = [
-  { path: '', redirectTo: 'create', pathMatch: 'full' },
-  { path: 'list', component: CardToolListComponent },
+  { path: '', component: CardToolListComponent },
   { path: 'create', component: CardToolEditComponent },
-  { path: ':chartid', component: CardToolEditComponent },
+  { path: ':roleCardId', component: CardToolEditComponent },
 ];
 
 @NgModule({

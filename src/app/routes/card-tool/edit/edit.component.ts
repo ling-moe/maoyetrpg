@@ -19,13 +19,13 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatSelectChange } from '@angular/material/select';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TokenService, User } from '@core';
 import { FormlyFieldConfig } from '@ngx-formly/core';
 import { EChartsType } from 'echarts/core';
 import { maxBy, shuffle, sumBy, zipObject } from 'lodash';
 import { NgxIndexedDBService } from 'ngx-indexed-db';
-import { filter, map, pairwise, startWith, switchMap, tap } from 'rxjs/operators';
+import { filter, first, map, pairwise, startWith, switchMap, tap } from 'rxjs/operators';
 import { CardToolService } from '../card-tool.service';
 import {
   Time,
@@ -56,6 +56,7 @@ import {
   Weapon,
   WeaponsGroup,
 } from './types';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-card-tool-Edit',
@@ -63,9 +64,10 @@ import {
   styleUrls: ['./edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CardToolEditComponent implements OnInit, OnChanges {
+export class CardToolEditComponent implements OnInit {
+  isEdit = false;
+  roleCardId?: number;
   user?: User;
-  avatar?: string;
   jobs: Job[] = [];
   weapons: WeaponsGroup[] = [];
   personChart?: EChartsType;
@@ -96,12 +98,6 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     career: new FormGroup({}),
     skill: this.fb.array<FormGroup<SkillControl>>([]),
     things: this.fb.array([new FormControl()]),
-    mov: new FormControl(0),
-    cash: new FormControl(''),
-    level: new FormControl(''),
-    hp: new FormControl(''),
-    mp: new FormControl(''),
-    san: new FormControl(''),
   });
   model: any = {
     userid: 0,
@@ -129,50 +125,64 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     private fb: FormBuilder,
     private activatedRoute: ActivatedRoute,
     private cdr: ChangeDetectorRef,
-    private dbService: NgxIndexedDBService
+    private dbService: NgxIndexedDBService,
+    private snackBar: MatSnackBar,
+    private router: Router
   ) {}
-  ngOnChanges(changes: SimpleChanges): void {
-    console.log(`触发变更检测：${changes}`);
-  }
 
   ngOnInit() {
     this.initForm();
     this.initData();
   }
 
+  remove() {
+    if (!this.roleCardId) return;
+    this.dbService.deleteByKey('RoleCards', this.roleCardId!).subscribe(isDelete => {
+      this.snackBar.open('删除成功', '关闭', {
+        horizontalPosition: 'right',
+        verticalPosition: 'bottom',
+        duration: 1000,
+      });
+      this.router.navigate(['../']);
+    });
+  }
+
   submit() {
-    const characterCard = {
+    const roleCard = {
       ...this.model,
+      roleCardId: this.roleCardId,
       skill: this.skillArray.value,
       weapon: this.currentWeapons.map(weapon => weapon.value),
       things: this.itemArray.value,
     };
-    // this.cardToolService.createRoleCard(this.model).subscribe(res => {
-    //   console.log(res);
-    // });
-    console.log(this.skillArray.value);
-    console.log(this.model);
-    this.dbService.add('characterCard', characterCard).subscribe(key => {
-      console.log('key: ', key);
+    (this.isEdit
+      ? this.dbService.update('RoleCards', roleCard)
+      : this.dbService.add('RoleCards', roleCard)
+    ).subscribe(key => {
+      this.roleCardId = key;
+      this.snackBar.open('保存成功', '关闭', {
+        horizontalPosition: 'right',
+        verticalPosition: 'bottom',
+        duration: 1000,
+      });
     });
   }
 
   initData() {
-    // this.activatedRoute.params
-    //   .pipe(
-    //     filter(params => params.chartid),
-    //     map(params => params.chartid as string),
-    //     switchMap(chartId => this.cardToolService.detailRoleCard(chartId))
-    //   )
-    //   .subscribe(roleCard => {
-    //     this.options.updateInitialValue?.(roleCardToModel(roleCard));
-    //     this.options.resetModel?.();
-    //   });
-    // this.dbService.getByKey<RoleCard>('characterCard', 18).subscribe(card => {
-    //   this.form.patchValue(card);
-    //   this.currentWeapons = card.weapon.map(i => this.totalWeapons[i]);
-    //   card.skill.filter(i => i.freeType).forEach(i => (this.freeSkill[i.freeType]! -= 1));
-    // });
+    this.activatedRoute.params
+      .pipe(
+        filter(params => params.roleCardId),
+        map(params => Number(params.roleCardId)),
+        switchMap(roleCardId => this.dbService.getByKey<RoleCard>('RoleCards', roleCardId))
+      )
+      .subscribe(roleCard => {
+        this.isEdit = true;
+        this.model.person.avatar = roleCard.person.avatar;
+        this.roleCardId = roleCard.roleCardId;
+        this.form.patchValue(roleCard);
+        this.currentWeapons = roleCard.weapon.map(i => this.totalWeapons[i]);
+        roleCard.skill.filter(i => i.freeType).forEach(i => (this.freeSkill[i.freeType]! -= 1));
+      });
   }
 
   private initForm() {
@@ -204,8 +214,8 @@ export class CardToolEditComponent implements OnInit, OnChanges {
 
   private subcribeSkillPoint() {
     this.skillArray.valueChanges.subscribe(val => {
-      this.currentJobSkillPoint = sumBy(val, v => v.pro??0);
-      this.currentInterestSkillPoint = sumBy(val, v => v.interest??0);
+      this.currentJobSkillPoint = sumBy(val, v => v.pro ?? 0);
+      this.currentInterestSkillPoint = sumBy(val, v => v.interest ?? 0);
     });
   }
 
@@ -230,7 +240,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
 
   iniChange(v: MatSelectChange, item: SkillFormGroup) {
     const skill = this.skselects[item.options].all;
-    if(skill[v.value].ini){
+    if (skill[v.value].ini) {
       item.patchValue({ ini: skill[v.value].ini });
     }
   }
@@ -287,7 +297,6 @@ export class CardToolEditComponent implements OnInit, OnChanges {
   }
 
   interestSkills() {
-    console.log('兴趣技能:' + this.skillArray.controls.filter(skill => !skill.value.bz).length);
     return this.skillArray.controls.filter(skill => !skill.value.bz);
   }
 
@@ -354,15 +363,15 @@ export class CardToolEditComponent implements OnInit, OnChanges {
     const skill = item.getRawValue();
     const rate = calcRate(skill, sub);
     if (skill.name === '信用评级') {
-      this.form.patchValue(calcCashLevel(rate), {
+      this.assetsForm.patchValue(calcCashLevel(rate), {
         emitEvent: false,
       });
     }
     return rate;
   }
 
-  modifyAvatar(avatorUrl: string) {
-    this.model.person.touxiang = avatorUrl;
+  modifyAvatar(avatarUrl: string) {
+    this.model.person.avatar = avatarUrl;
   }
 
   getJobDesc(index: string): string {
@@ -531,17 +540,12 @@ export class CardToolEditComponent implements OnInit, OnChanges {
           hooks: {
             onChanges: (field: FormlyFieldConfig) => {
               field.options?.fieldChanges
-                ?.pipe(
-                  filter(e => e.field === field && e.value !== null),
-                  tap(e => console.log(e))
-                )
+                ?.pipe(filter(e => e.field === field && e.value !== null))
                 .subscribe(e => {
                   const curJob = this.jobs[e.value];
                   this.freeSkill = {};
                   this.skillArray.controls.forEach(control => {
-                    control.patchValue(
-                      { bz: false, pro: 0, selectedNum: null }
-                    );
+                    control.patchValue({ bz: false, pro: 0, selectedNum: null });
                   });
                   curJob.skills.forEach(skillNum => {
                     this.skillArray.at(skillNum).patchValue({ bz: true });
@@ -649,7 +653,7 @@ export class CardToolEditComponent implements OnInit, OnChanges {
                 ?.pipe(filter(e => e.field === field && e.value !== null))
                 .subscribe(() => {
                   const t = calcHP(this.model.attribute);
-                  this.form.patchValue({
+                  this.attributeForm.patchValue({
                     hp: `${t}/${t}`,
                   });
                 });
