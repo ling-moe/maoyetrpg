@@ -132,7 +132,6 @@ export class CardToolEditComponent implements OnInit {
 
   ngOnInit() {
     this.initForm();
-    this.initData();
   }
 
   remove() {
@@ -150,11 +149,13 @@ export class CardToolEditComponent implements OnInit {
   submit() {
     const roleCard = {
       ...this.model,
-      roleCardId: this.roleCardId,
       skill: this.skillArray.value,
       weapon: this.currentWeapons.map(weapon => weapon.value),
       things: this.itemArray.value,
     };
+    if(this.roleCardId != null){
+      roleCard.roleCardId = this.roleCardId;
+    }
     (this.isEdit
       ? this.dbService.update('RoleCards', roleCard)
       : this.dbService.add('RoleCards', roleCard)
@@ -202,6 +203,8 @@ export class CardToolEditComponent implements OnInit {
       this.totalWeapons = Object.keys(cocConfig.weapons)
         .map(key => cocConfig.weapons[key])
         .reduce((a, b) => (a as Weapon[]).concat(b));
+      // 初始化数据
+      this.initData();
     });
     this.personChart = echarts.init(this.chartEle!.nativeElement);
     this.personChart.resize();

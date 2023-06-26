@@ -46,7 +46,8 @@
               "namespace-emitter",
               "classnames",
               "is-shallow-equal",
-              "lodash.debounce"
+              "lodash.debounce",
+              "moment"
             ]
           },
           "configurations": {
