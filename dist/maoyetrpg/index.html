@@ -1,0 +1,95 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="utf-8">
+  <title>Maoyetrpg</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="assets/fonts/Material_Icons.css" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="assets/fonts/Material_Icons.css"></noscript>
+  <style type="text/css">@font-face{font-family:'Material Icons';font-style:normal;font-weight:400;src:url(https://fonts.gstatic.com/s/materialicons/v140/flUhRq6tzZclQEJ-Vdg-IuiaDsNcIhQ8tQ.woff2) format('woff2');}.material-icons{font-family:'Material Icons';font-weight:normal;font-style:normal;font-size:24px;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;word-wrap:normal;direction:ltr;-webkit-font-feature-settings:'liga';-webkit-font-smoothing:antialiased;}</style>
+  <style type="text/css">
+    .global-loader {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      background-color: #fff;
+      opacity: 1;
+      transition: opacity .5s ease-in-out;
+    }
+
+    .global-loader-fade-in {
+      opacity: 0;
+    }
+
+    .global-loader-hidden {
+      display: none;
+    }
+
+    .global-loader h1 {
+      font-family: "Helvetica Neue", Helvetica, sans-serif;
+      font-weight: normal;
+      font-size: 24px;
+      letter-spacing: .04rem;
+      white-space: pre;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-image:
+        repeating-linear-gradient(
+          to right,
+          #f44336,
+          #9c27b0,
+          #3f51b5,
+          #03a9f4,
+          #009688,
+          #8bc34a,
+          #ffeb3b,
+          #ff9800
+        );
+      background-size: 750% auto;
+      background-position: 0 100%;
+      animation: gradient 20s infinite;
+      animation-fill-mode: forwards;
+      animation-timing-function: linear;
+    }
+
+    @keyframes gradient {
+      0% {
+        background-position: 0 0;
+      }
+
+      100% {
+        background-position: -750% 0;
+      }
+    }
+  </style>
+  <script type="text/javascript">
+      /* 判断当前浏览器是否支持serviceWorker */
+      if ('serviceWorker' in navigator) {
+          /* 当页面加载完成就创建一个serviceWorker */
+          window.addEventListener('load', function () {
+              /* 创建并指定对应的执行内容 */
+              /* scope 参数是可选的，可以用来指定你想让 service worker 控制的内容的子目录。 在这个例子里，我们指定了 '/'，表示 根网域下的所有内容。这也是默认值。 */
+              navigator.serviceWorker.register('./serviceWorker.js', {scope: './'})
+                  .then(function (registration) {
+                      console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                  })
+                  .catch(function (err) {
+                      console.log('ServiceWorker registration failed: ', err);
+                  });
+          });
+      }
+  </script>
+<style>body{margin:0;font-family:Roboto,Helvetica Neue Light,Helvetica Neue,Helvetica,Arial,Lucida Grande,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;text-size-adjust:100%;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}html,body{position:relative;height:100%;overflow:auto}*,:after,:before{box-sizing:border-box}@charset "UTF-8"</style><link rel="stylesheet" href="styles.da8023eae4e352f8.css" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="styles.da8023eae4e352f8.css"></noscript></head>
+<body>
+  <app-root></app-root>
+  <div id="globalLoader" class="global-loader"><h1>LOADING</h1></div>
+<script src="runtime.cd95186c459ce3d0.js" type="module"></script><script src="polyfills.a68c3e8c4e8265c3.js" type="module"></script><script src="main.9071c01fc114d63a.js" type="module"></script>
+
+</body></html>
