@@ -5,6 +5,7 @@
     "hmr": "ng serve --hmr --disable-host-check --host 0.0.0.0",
     "build:prod": "ng build",
     "start": "ng serve",
+    "deploy": "cp -r ./dist/maoyetrpg/* ./docs/",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "npm run lint:ts && npm run lint:scss",
