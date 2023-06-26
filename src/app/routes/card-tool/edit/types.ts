@@ -61,14 +61,13 @@ export interface ProFormula {
 
 export interface Skill {
   bz:          boolean;
-  grow:        string;
-  ini:         string;
-  interest:    string;
+  grow:        number;
+  ini:         number;
+  interest:    number;
   introduce:   string;
   name:        string;
   num:         number;
-  pro:         string;
-  total:       string;
+  pro:         number;
   type:        Type;
   select:      boolean;
   selectValue: SkselectKey;
@@ -100,14 +99,14 @@ export type JobSkselect = {
 };
 
 export interface Skselect {
-  jiyi:     JobSkselect[];
-  muyu:     JobSkselect[];
-  waiyu:    JobSkselect[];
-  jiashi:   JobSkselect[];
-  gedou:    JobSkselect[];
-  sheji:    JobSkselect[];
-  kexue:    JobSkselect[];
-  shengcun: JobSkselect[];
+  jiyi:     JobSkselect;
+  muyu:     JobSkselect;
+  waiyu:    JobSkselect;
+  jiashi:   JobSkselect;
+  gedou:    JobSkselect;
+  sheji:    JobSkselect;
+  kexue:    JobSkselect;
+  shengcun: JobSkselect;
 }
 
 export interface Gedou {

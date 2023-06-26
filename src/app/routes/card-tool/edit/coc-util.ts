@@ -1,6 +1,6 @@
 import { toNumber } from 'lodash';
 import { BzElement, CocConfig, RoleCard } from './types';
-export const WeaponCategory: {[key: string]: string} = {
+export const WeaponCategory: { [key: string]: string } = {
   cg: '常规武器',
   sq: '手枪',
   bbq: '半自动步枪',
@@ -12,7 +12,7 @@ export const WeaponCategory: {[key: string]: string} = {
   qt: '其它武器',
 };
 
-export const Time =[
+export const Time = [
   { value: 0, label: '1820~1920' },
   { value: 1, label: '1920~1990' },
   { value: 2, label: '1990~2010' },
@@ -31,25 +31,25 @@ export const Time =[
   { value: 15, label: '其他' },
 ];
 
-export function calcCashLevel(assets: number){
-    let cash, level;
-    if (assets === 0) {
-      cash = '15';
-      level = '$15';
-    } else if (assets < 10) {
-      cash = 'CR*40';
-      level = '$300';
-    } else if (assets < 50) {
-      cash = 'CR*100';
-      level = '$1500';
-    } else if (assets < 90) {
-      cash = 'CR*200';
-      level = '$7500';
-    } else {
-      cash = '1.5M';
-      level = '$150000';
-    }
-    return {cash, level};
+export function calcCashLevel(assets: number) {
+  let cash, level;
+  if (assets === 0) {
+    cash = '15';
+    level = '$15';
+  } else if (assets < 10) {
+    cash = 'CR*40';
+    level = '$300';
+  } else if (assets < 50) {
+    cash = 'CR*100';
+    level = '$1500';
+  } else if (assets < 90) {
+    cash = 'CR*200';
+    level = '$7500';
+  } else {
+    cash = '1.5M';
+    level = '$150000';
+  }
+  return { cash, level };
 }
 
 export function calcDbAndBuild(str: number, siz: number) {
@@ -68,7 +68,6 @@ export function calcDbAndBuild(str: number, siz: number) {
     return { db: '无', build: 0 };
   }
 }
-
 
 export function calcMov(str: number, dex: number, siz: number, age: number): number {
   let mov = 8;
@@ -93,7 +92,7 @@ export function calcMov(str: number, dex: number, siz: number, age: number): num
   return mov;
 }
 
-export function liveLevel(assets: number){
+export function liveLevel(assets: number) {
   if (assets === 0) {
     return '身无分文';
   } else if (assets < 10) {
@@ -109,20 +108,19 @@ export function liveLevel(assets: number){
   }
 }
 
-
-export function calcMP(pow: number){
+export function calcMP(pow: number) {
   return Math.round(pow / 5);
 }
 
-export function calcSan(pow: number){
+export function calcSan(pow: number) {
   return pow;
 }
 
-export function calcCredit(ini: number, grow: number,pro: number,interest: number){
+export function calcCredit(ini: number, grow: number, pro: number, interest: number) {
   return ini + grow + pro + interest;
 }
 
-export function modelToRoleCard(model: any, config: CocConfig): RoleCard{
+export function modelToRoleCard(model: any, config: CocConfig): RoleCard {
   const roleCard: any = model;
   const { str, con, pow, dex, app, siz, int, edu, hp, mp, san } = roleCard.attribute;
   roleCard.attribute.all = 0 + str + con + pow + dex + app + siz + int + edu;
@@ -136,11 +134,17 @@ export function modelToRoleCard(model: any, config: CocConfig): RoleCard{
   roleCard.mind = roleCard.attribute.mind;
   roleCard.job.value = `${roleCard.name.jobval}`;
   roleCard.jobwt = [+str, +con, +pow, +dex, +app, +siz, +int, +edu];
-  roleCard.money = [`${roleCard.assets.credit}%`, roleCard.assets.live, roleCard.assets.cash, roleCard.assets.level, roleCard.assets.assetsDesc];
+  roleCard.money = [
+    `${roleCard.assets.credit}%`,
+    roleCard.assets.live,
+    roleCard.assets.cash,
+    roleCard.assets.level,
+    roleCard.assets.assetsDesc,
+  ];
   return roleCard as RoleCard;
 }
 
-export function roleCardToModel(roleCard: RoleCard): any{
+export function roleCardToModel(roleCard: RoleCard): any {
   const model: any = roleCard;
   // model.job.value = roleCard.job.value;
   delete model.hp;
@@ -151,5 +155,4 @@ export function roleCardToModel(roleCard: RoleCard): any{
   // model.level = roleCard.money[3];
   delete model.money;
   return model;
-
 }
