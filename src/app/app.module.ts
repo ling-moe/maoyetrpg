@@ -34,7 +34,6 @@ const dbConfig: DBConfig  = {
     store: 'RoleCards',
     storeConfig: { keyPath: 'roleCardId', autoIncrement: true },
     storeSchema: [
-      { name: 'name', keypath: 'person.chartname', options: { unique: false } }
     ]
   }]
 };
