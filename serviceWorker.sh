@@ -18,4 +18,4 @@ cp ./serviceWorker.js ./dist/maoyetrpg/
 sed -i "s@$replacement@$json_array@" "$file_path"
 
 # 覆盖到部署目录下
-rm -rf ./docs/* --exclude=CNAME && cp -r ./dist/maoyetrpg/* ./docs/
+rm -rf ./docs/* && cp -r ./dist/maoyetrpg/* ./docs/ && cp -r ./CNAME ./docs/
